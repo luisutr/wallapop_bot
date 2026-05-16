@@ -1,0 +1,7 @@
+playwright
+pandas
+certifi
+undetected-chromedriver
+wallapy
+vinted-scraper
+rich

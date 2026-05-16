@@ -1,4 +1,5 @@
 import os
+import subprocess
 import tkinter as tk
 from tkinter import filedialog, messagebox
 
@@ -7,7 +8,7 @@ class WallapopBotGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("Wallapop & Vinted Bot GUI")
-        self.root.geometry("600x400")
+        self.root.geometry("600x500")
 
         # Lista de productos cargados
         self.products = []
@@ -26,7 +27,7 @@ class WallapopBotGUI:
         self.product_listbox = tk.Listbox(self.root, width=70, height=10)
         self.product_listbox.pack(pady=10)
 
-        # Botón para iniciar publicación
+        # Botones adicionales
         tk.Button(self.root, text="Publicar Productos", command=self.publish_products).pack(pady=5)
 
     def add_product(self):
@@ -42,9 +43,23 @@ class WallapopBotGUI:
             messagebox.showwarning("Sin Productos", "No hay productos cargados para publicar.")
             return
 
-        # Simular publicación
+        # Publicación real invocando uploader_wallapop.py
         for product in self.products:
-            print(f"Publicando {product['name']} con {len(product['images'])} imágenes...")
+            try:
+                # Exportar fotos a la carpeta `lote`
+                product_folder = f"lote/{product['name']}"
+                os.makedirs(product_folder, exist_ok=True)
+                for i, image in enumerate(product['images']):
+                    dest = os.path.join(product_folder, f"foto_{i + 1}.jpg")
+                    with open(image, "rb") as src:
+                        with open(dest, "wb") as dst:
+                            dst.write(src.read())
+
+                # Usar uploader_wallapop.py para subir el producto
+                subprocess.run(["python", "uploader_wallapop.py"], check=True)
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Error al subir {product['name']}: {str(e)}")
 
         messagebox.showinfo("Publicación Completa", "¡Productos publicados exitosamente!")
         self.products.clear()

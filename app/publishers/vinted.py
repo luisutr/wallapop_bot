@@ -162,6 +162,26 @@ def subir_vinted(producto: dict) -> bool:
             # Categoría
             _click_dropdown(page, "category", str(producto["categoria_vinted"]))
 
+            # Marca (Vinted requiere marca en muchas categorías)
+            try:
+                brand_input = page.locator("#brand")
+                if brand_input.count() > 0 and brand_input.is_visible():
+                    brand_input.click()
+                    _human_sleep(1500, 500)
+                    
+                    # Coger el primer resultado que ofrece Vinted (sugerencia)
+                    opciones_marca = page.locator("div[role='dialog'] div[role='button'] div.web_ui__Cell__title")
+                    if opciones_marca.count() == 0:
+                        opciones_marca = page.locator("div[role='button'] div.web_ui__Cell__title")
+                    
+                    if opciones_marca.count() > 0:
+                        opciones_marca.first.click()
+                    else:
+                        brand_input.press("Escape")
+                    _human_sleep(1000, 200)
+            except Exception:
+                pass
+
             # Campos específicos para videojuegos
             tipo = producto.get("tipo", "otro")
             if tipo == "videojuego":
@@ -170,9 +190,51 @@ def subir_vinted(producto: dict) -> bool:
                 if producto.get("pegi"):
                     _click_dropdown(page, "video_game_rating", str(producto["pegi"]))
 
+            # Intentar rellenar Talla y Color por defecto si existen (para ropa, etc.)
+            default_texts = {
+                "size": "Talla única",
+                "color": "Varios"
+            }
+            for extra_field in ["size", "color", "material"]:
+                try:
+                    field_input = page.locator(f"#{extra_field}")
+                    if field_input.count() > 0 and field_input.is_visible():
+                        field_input.click()
+                        _human_sleep(1500, 500)
+                        
+                        target_text = default_texts.get(extra_field)
+                        clicked = False
+                        if target_text:
+                            opcion_target = page.locator("div[role='button'] div.web_ui__Cell__title").filter(has_text=target_text)
+                            if opcion_target.count() > 0:
+                                opcion_target.first.click()
+                                clicked = True
+                        
+                        if not clicked:
+                            # Pillamos la primera opción que nos ofrezca Vinted
+                            opciones_extra = page.locator("div[role='dialog'] div[role='button'] div.web_ui__Cell__title")
+                            if opciones_extra.count() == 0:
+                                opciones_extra = page.locator("div[role='button'] div.web_ui__Cell__title")
+                                
+                            if opciones_extra.count() > 0:
+                                opciones_extra.first.click()
+                            else:
+                                field_input.press("Escape")
+                        _human_sleep(1000, 200)
+                except Exception:
+                    pass
+
             # Condición
             _seleccionar_condicion(page, str(producto["estado_vinted"]))
             _human_sleep(2000, 500)
+
+            # Seleccionar paquete pequeño por defecto
+            try:
+                # En Vinted, package-size-1 suele corresponder al paquete pequeño
+                page.locator("#package-size-1").click(timeout=3000)
+                _human_sleep(1000, 200)
+            except Exception:
+                pass
 
             # Publicar
             page.locator("button[data-testid='upload-form-save-button']").click()

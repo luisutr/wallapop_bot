@@ -53,17 +53,17 @@ def subir_wallapop(producto: dict, slow_mo: int = 300) -> bool:
             page.get_by_text("Continuar").click()
 
             # Paso 2 – Fotos
-            page.wait_for_selector(".DropAreaZone__wrapper", timeout=15_000)
+            page.wait_for_selector("input[type='file']", state="attached", timeout=20_000)
             fotos = [str(Path(f).resolve()) for f in producto["fotos"]]
-            page.wait_for_selector("input[type='file']", timeout=15_000)
             file_input = page.locator("input[type='file']")
             try:
+                # set_input_files works on hidden elements
                 file_input.first.set_input_files(fotos)
             except PWTimeout:
                 for f in fotos:
                     file_input.first.set_input_files(f)
                     time.sleep(0.5)
-            _click_continuar(page)
+            _click_continuar(page, timeout=45_000)
 
             # Paso 3 – Categoría (primera sugerida por Wallapop basándose en el título)
             page.wait_for_selector("[aria-label='Categoría y subcategoría']", timeout=15_000)
@@ -79,21 +79,27 @@ def subir_wallapop(producto: dict, slow_mo: int = 300) -> bool:
 
             # Estado
             estado_texto = producto.get("estado_texto", "Como nuevo")
-            estado_dropdown = page.locator('div[aria-label="Estado*"]')
-            estado_dropdown.click()
-            for _ in range(10):
-                opciones = page.locator('.walla-dropdown__floating-area li[role="option"]')
-                if opciones.count() > 0:
-                    break
-                time.sleep(0.5)
-            for i in range(opciones.count()):
-                if estado_texto in opciones.nth(i).inner_text():
-                    opciones.nth(i).scroll_into_view_if_needed()
-                    opciones.nth(i).click()
-                    break
+            # Buscar el nuevo componente walla-text-input o el label directamente
+            estado_dropdown = page.locator("label:has-text('Estado*')")
+            if estado_dropdown.count() == 0:
+                estado_dropdown = page.locator('div[aria-label="Estado*"]')
+            estado_dropdown.first.click()
+            
+            time.sleep(1) # Esperar animación
+            try:
+                opcion = page.get_by_text(estado_texto, exact=True)
+                if opcion.count() > 0:
+                    opcion.first.click()
+                else:
+                    page.locator(f"text='{estado_texto}'").first.click()
+            except Exception:
+                pass
 
             # Precio
-            page.fill("#sale_price", str(round(producto["precio"], 2)))
+            precio_loc = page.locator("#sale_price")
+            precio_loc.click()
+            precio_loc.fill(str(round(producto["precio"], 2)))
+            page.keyboard.press("Tab") # Para que registre el cambio
 
             # Peso: primera opción (0–1 kg)
             for i in range(page.locator('input.walla-radio__input').count()):

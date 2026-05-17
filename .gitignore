@@ -2,3 +2,7 @@ venv/
 __pycache__/
 .idea/
 .DS_Store
+sesiones/
+errores/
+procesados/
+lote/

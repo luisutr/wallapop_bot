@@ -6,6 +6,7 @@ from __future__ import annotations
 # la categoría. Usamos el texto de la primera sugerencia.
 # Este mapa solo se usa para mostrar info al usuario en la tabla resumen.
 CATEGORIAS_WALLAPOP: dict[str, str] = {
+    "accesorio_consola": "Electrónica",
     "videojuego":  "Videojuegos",
     "ropa_hombre": "Ropa y accesorios > Hombre",
     "ropa_mujer":  "Ropa y accesorios > Mujer",
@@ -23,6 +24,7 @@ CATEGORIAS_WALLAPOP: dict[str, str] = {
 
 # Vinted: texto exacto del dropdown #category
 CATEGORIAS_VINTED: dict[str, str] = {
+    "accesorio_consola": "Mandos",
     "videojuego":  "Juegos",
     "ropa_hombre": "Ropa de hombre",
     "ropa_mujer":  "Ropa de mujer",
@@ -41,8 +43,15 @@ CATEGORIAS_VINTED: dict[str, str] = {
 # Tipos disponibles (usado en CLI para la pregunta manual)
 TIPOS_DISPONIBLES: list[str] = list(CATEGORIAS_WALLAPOP.keys())
 
+# Mandos, volantes, etc. — prioridad sobre «videojuego» si hay token ps2/ps3…
+ACCESORIO_CONSOLA_KEYWORDS: frozenset[str] = frozenset({
+    "mando", "mandos", "controller", "gamepad", "joystick",
+    "volante", "wheel", "wiimote", "nunchuk", "arcade",
+})
+
 # ── Keywords por tipo ────────────────────────────────────────────────────────
 CATEGORY_KEYWORDS: dict[str, list[str]] = {
+    "accesorio_consola": list(ACCESORIO_CONSOLA_KEYWORDS),
     "videojuego": [
         "ps1", "ps2", "ps3", "ps4", "ps5", "psp", "psvita", "vita",
         "xbox", "xbox360", "xboxone", "xboxseries",
@@ -87,7 +96,12 @@ CATEGORY_KEYWORDS: dict[str, list[str]] = {
         "sofa", "mesa", "silla", "lampara", "cuadro",
         "espejo", "alfombra", "cama", "armario",
     ],
-    "juguete": ["lego", "figura", "muñeca", "juguete", "peluche", "puzzle"],
+    "juguete": [
+        "lego", "figura", "muñeca", "juguete", "peluche", "puzzle",
+        "gijoe", "heman", "motu", "playmobil", "funko", "hasbro", "mattel",
+        "bandai", "transformer", "starwars", "marvel", "dc", "ninja",
+        "hotwheel", "hotwheels", "matchbox",
+    ],
 }
 
 
@@ -96,8 +110,15 @@ def detectar_tipo(tokens: list[str], plataforma_detectada: bool = False) -> tupl
     Devuelve (tipo, confianza).
     confianza: 1.0 = certeza, 0.0 = desconocido.
     """
+    if any(t in ACCESORIO_CONSOLA_KEYWORDS for t in tokens):
+        return "accesorio_consola", 1.0
+
     if plataforma_detectada:
-        return "videojuego", 1.0
+        juego_kw = set(CATEGORY_KEYWORDS["videojuego"])
+        if any(t in juego_kw for t in tokens):
+            return "videojuego", 1.0
+        # p.ej. doom_3_ps3 sin palabra «mando» → videojuego
+        return "videojuego", 0.85
 
     scores: dict[str, int] = {}
     for tipo, keywords in CATEGORY_KEYWORDS.items():

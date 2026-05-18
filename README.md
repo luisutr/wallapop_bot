@@ -79,9 +79,14 @@ sobrescribir cualquier campo generado automáticamente:
 |---------------|-------------------|-----------------------|
 | `nuevo`       | Nuevo             | Nuevo sin etiquetas   |
 | `como_nuevo`  | Como nuevo        | Nuevo sin etiquetas   |
-| `buen_estado` | En buen estado    | Muy bueno             |
-| `bueno`       | Bueno             | Bueno                 |
-| `aceptable`   | Se acepta         | Satisfactorio         |
+| `bueno` / `buen_estado` | En buen estado | Bueno |
+| `aceptable` | En condiciones aceptables | Satisfactorio |
+| `sin_abrir` | Sin abrir | — |
+| `en_su_caja` | En su caja | — |
+| `dado_todo` | Lo ha dado todo | — |
+
+Slugs con `mando`, `gamepad`, etc. se clasifican como **accesorio_consola** → categoría Vinted **Mandos** (no Juegos).
+En videojuegos reales, si aparece «Clasificación de contenidos»: **AO – Solo adultos**; plataforma: primera sugerencia si no hay match.
 
 **Valores válidos para `publicar_en`:** `["wallapop"]`, `["vinted"]`, `["wallapop", "vinted"]`
 

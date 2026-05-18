@@ -3,6 +3,10 @@ __pycache__/
 .idea/
 .DS_Store
 sesiones/
+!sesiones/.gitkeep
 errores/
 procesados/
 lote/
+logs/
+!logs/.gitkeep
+iloveimg-converted/

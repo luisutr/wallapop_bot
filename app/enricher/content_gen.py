@@ -24,6 +24,7 @@ class ContenidoProducto:
     pegi: str
     estado_wallapop: str
     estado_vinted: str
+    marca: Optional[str] = None
 
 
 def generar_contenido(
@@ -50,10 +51,12 @@ def generar_contenido(
     categoria_vinted   = CATEGORIAS_VINTED.get(tipo, CATEGORIAS_VINTED["otro"])
 
     # ── Plataforma para Vinted ────────────────────────────────────────────────
-    plataforma_vinted = plataforma["vinted"] if plataforma else None
+    plataforma_vinted = (
+        plataforma["vinted"] if plataforma and tipo == "videojuego" else None
+    )
 
     # ── Estado ───────────────────────────────────────────────────────────────
-    estado_wallapop = ESTADO_WALLAPOP.get(estado_key, "Como nuevo")
+    estado_wallapop = ESTADO_WALLAPOP.get(estado_key, "En buen estado")
     estado_vinted   = ESTADO_VINTED.get(estado_key, "Nuevo sin etiquetas")
 
     # ── Descripciones ─────────────────────────────────────────────────────────
@@ -85,4 +88,5 @@ def generar_contenido(
         pegi=pegi_override or PEGI_DEFAULT,
         estado_wallapop=estado_wallapop,
         estado_vinted=estado_vinted,
+        marca=info.marca,
     )

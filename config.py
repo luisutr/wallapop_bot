@@ -6,9 +6,11 @@ LOTE_DIR       = BASE_DIR / "lote"
 PROCESADOS_DIR = BASE_DIR / "procesados"
 SESIONES_DIR   = BASE_DIR / "sesiones"
 ERRORES_DIR    = BASE_DIR / "errores"
+LOGS_DIR       = BASE_DIR / "logs"   # Auditoría de formularios por publicación
 
 WALLAPOP_STATE_PATH = SESIONES_DIR / "wallapop_state.json"
 VINTED_COOKIES_PATH = SESIONES_DIR / "vinted_cookies.pkl"
+VINTED_STATE_PATH   = SESIONES_DIR / "vinted_state.json"   # Playwright storage_state (preferido)
 
 # ── Configuración personal ──────────────────────────────────────────────────
 LOCALIZACION = "Toledo"
@@ -20,14 +22,29 @@ PRECIO_FALLBACK = 10.0
 
 # ── Estado del producto ─────────────────────────────────────────────────────
 # Valores válidos en meta.json → "estado": "<clave>"
-ESTADO_DEFAULT = "como_nuevo"
+ESTADO_DEFAULT = "bueno"  # → En buen estado en Wallapop
 
+# Textos EXACTOS del dropdown Estado en Wallapop (aria-label de walla-dropdown-item)
+ESTADOS_WALLAPOP_VALIDOS: tuple[str, ...] = (
+    "Sin abrir",
+    "En su caja",
+    "Nuevo",
+    "Como nuevo",
+    "En buen estado",
+    "En condiciones aceptables",
+    "Lo ha dado todo",
+)
+
+# Claves en meta.json → texto exacto en Wallapop
 ESTADO_WALLAPOP: dict[str, str] = {
-    "nuevo":       "Nuevo",
-    "como_nuevo":  "Como nuevo",
-    "buen_estado": "En buen estado",
-    "bueno":       "Bueno",
-    "aceptable":   "Se acepta",
+    "sin_abrir":    "Sin abrir",
+    "en_su_caja":   "En su caja",
+    "nuevo":        "Nuevo",
+    "como_nuevo":   "Como nuevo",
+    "buen_estado":  "En buen estado",
+    "bueno":        "En buen estado",   # Wallapop no tiene «Bueno»
+    "aceptable":    "En condiciones aceptables",
+    "dado_todo":    "Lo ha dado todo",
 }
 
 ESTADO_VINTED: dict[str, str] = {
@@ -38,8 +55,10 @@ ESTADO_VINTED: dict[str, str] = {
     "aceptable":   "Satisfactorio",
 }
 
-# ── Videojuegos ─────────────────────────────────────────────────────────────
+# ── Videojuegos (Vinted) ────────────────────────────────────────────────────
 PEGI_DEFAULT = "PEGI 18"
+# Texto exacto en el dropdown «Clasificación de contenidos» cuando aparece
+VINTED_RATING_DEFAULT = "AO – Solo adultos"
 
 # ── URLs ────────────────────────────────────────────────────────────────────
 WALLAPOP_UPLOAD_URL = "https://es.wallapop.com/app/catalog/upload"

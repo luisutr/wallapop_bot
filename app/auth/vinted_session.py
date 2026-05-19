@@ -1,12 +1,17 @@
 from __future__ import annotations
 
 import certifi
-import json
 import os
 import pickle
 from typing import Callable, Optional
 
 from config import VINTED_COOKIES_PATH, VINTED_STATE_PATH, SESIONES_DIR
+
+from ._playwright_storage import (
+    read_local_storage,
+    save_storage_state,
+    selenium_cookies_to_playwright,
+)
 
 
 def guardar_sesion_vinted(wait_fn: Optional[Callable[[], None]] = None) -> None:
@@ -20,10 +25,15 @@ def guardar_sesion_vinted(wait_fn: Optional[Callable[[], None]] = None) -> None:
 
     try:
         import undetected_chromedriver as uc
-    except ImportError:
-        raise RuntimeError(
-            "Falta undetected-chromedriver. Ejecuta: pip install undetected-chromedriver"
+    except ImportError as exc:
+        hint = (
+            "pip install undetected-chromedriver setuptools"
+            if "distutils" in str(exc).lower()
+            else "pip install undetected-chromedriver"
         )
+        raise RuntimeError(
+            f"No se pudo cargar undetected-chromedriver ({exc}). Ejecuta: {hint}"
+        ) from exc
 
     options = uc.ChromeOptions()
     options.add_argument("--window-size=1280,900")
@@ -37,44 +47,13 @@ def guardar_sesion_vinted(wait_fn: Optional[Callable[[], None]] = None) -> None:
         input("  [ENTER cuando hayas iniciado sesión] ")
 
     selenium_cookies = driver.get_cookies()
-    local_storage_items: list[dict] = []
-    try:
-        ls_raw = driver.execute_script(
-            "return Object.entries(localStorage).map(([k,v]) => ({name:k, value:v}))"
-        )
-        if ls_raw:
-            local_storage_items = ls_raw
-    except Exception:
-        pass
+    storage_state = selenium_cookies_to_playwright(
+        selenium_cookies,
+        origins=read_local_storage(driver, "https://www.vinted.es"),
+    )
     driver.quit()
 
-    def _map_samesite(v) -> str:
-        if v is None:
-            return "Lax"
-        v = str(v).strip().lower()
-        return {"no_restriction": "None", "none": "None", "strict": "Strict"}.get(v, "Lax")
-
-    pw_cookies = []
-    for c in selenium_cookies:
-        try:
-            pw_cookies.append({
-                "name": c["name"], "value": c["value"],
-                "domain": c.get("domain", ".vinted.es"),
-                "path": c.get("path", "/"),
-                "expires": int(c.get("expiry", -1)),
-                "httpOnly": bool(c.get("httpOnly", False)),
-                "secure": bool(c.get("secure", True)),
-                "sameSite": _map_samesite(c.get("sameSite")),
-            })
-        except Exception:
-            continue
-
-    storage_state = {
-        "cookies": pw_cookies,
-        "origins": [{"origin": "https://www.vinted.es", "localStorage": local_storage_items}],
-    }
-    with open(VINTED_STATE_PATH, "w", encoding="utf-8") as f:
-        json.dump(storage_state, f, ensure_ascii=False)
+    save_storage_state(VINTED_STATE_PATH, storage_state)
     with open(VINTED_COOKIES_PATH, "wb") as f:
         pickle.dump(selenium_cookies, f)
 

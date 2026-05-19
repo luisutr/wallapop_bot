@@ -12,11 +12,12 @@ from typing import Callable, Optional
 from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout
 
 from config import (
+    ERRORES_DIR,
+    VINTED_CONDICION_PUBLICACION,
     VINTED_COOKIES_PATH,
+    VINTED_RATING_DEFAULT,
     VINTED_STATE_PATH,
     VINTED_UPLOAD_URL,
-    VINTED_RATING_DEFAULT,
-    ERRORES_DIR,
 )
 from app.publishers.form_audit import PublishAudit, raise_if_not_verified
 
@@ -362,88 +363,160 @@ def _seleccionar_marca(page, producto: dict, log_fn=None) -> bool:
 def _seleccionar_plataforma(page, producto: dict, log_fn=None) -> bool:
     if not page.locator("#video_game_platform").is_visible(timeout=1_500):
         return True
-    if _leer_input(page, "video_game_platform"):
-        return True
 
-    radios = page.locator('input[data-testid^="video_game_platform-radio"]')
-    if radios.count() > 0:
-        try:
-            radios.first.click(force=True)
-            _log("Plataforma OK (radio)", log_fn)
-            return True
-        except Exception:
-            pass
+    actual = _leer_input(page, "video_game_platform")
+    if actual:
+        _log(f"Plataforma ya OK: {actual!r}", log_fn)
+        return True
 
     candidatos: list[str] = []
     if producto.get("plataforma_vinted"):
         candidatos.append(str(producto["plataforma_vinted"]))
-    candidatos.extend(["PlayStation 2", "PlayStation", "PS2"])
 
-    return _seleccionar_dropdown(
-        page, "video_game_platform", "", log_fn, candidatos=candidatos
-    )
+    # Intentar buscar primero por texto en el desplegable
+    if candidatos:
+        ok = _seleccionar_dropdown(
+            page, "video_game_platform", candidatos[0], log_fn, candidatos=candidatos
+        )
+        if ok:
+            return True
+
+    # Solo si no hay candidatos claros → primera sugerencia del campo de búsqueda
+    _log("Plataforma sin candidatos claros — 1ª sugerencia", log_fn)
+    return _elegir_primera_opcion(page, log_fn, field_id="video_game_platform")
 
 
 def _seleccionar_clasificacion(page, producto: dict, log_fn=None) -> bool:
-    if not page.locator("#video_game_rating").is_visible(timeout=1_500):
+    """Campo opcional: Clasificación de contenidos (video_game_ratings).
+    Si no se puede rellenar no es un error bloqueante.
+    """
+    # El campo puede llamarse video_game_rating o video_game_ratings
+    field_id = None
+    for fid in ("video_game_ratings", "video_game_rating"):
+        if page.locator(f"#{fid}").is_visible(timeout=1_000):
+            field_id = fid
+            break
+    if field_id is None:
         return True
-    if _leer_input(page, "video_game_rating"):
+    if _leer_input(page, field_id):
         return True
     pref = str(producto.get("pegi") or VINTED_RATING_DEFAULT)
-    return _seleccionar_dropdown(
-        page, "video_game_rating", pref, log_fn,
-        candidatos=[pref, "AO – Solo adultos", "PEGI 18"],
+    _seleccionar_dropdown(
+        page, field_id, pref, log_fn,
+        candidatos=[pref, "PEGI 18", "AO – Solo adultos"],
     )
+    return True  # siempre True: campo opcional
 
 
-_ALIAS_CONDICION: dict[str, list[str]] = {
-    "Nuevo sin etiquetas": ["Nuevo sin etiquetas", "Nuevo con etiquetas"],
-    "Nuevo con etiquetas": ["Nuevo con etiquetas", "Nuevo sin etiquetas"],
-    "Muy bueno":           ["Muy bueno"],
-    "Bueno":               ["Bueno"],
-    "Satisfactorio":       ["Satisfactorio"],
+_JS_CLICK_EXACTO = """
+(texto) => {
+    const objetivo = texto.toLowerCase().trim();
+    const candidatos = [
+        ...document.querySelectorAll('motion\\\\:div[role="button"]'),
+        ...document.querySelectorAll('li.web_ui__Item__item'),
+        ...document.querySelectorAll('[role="option"]'),
+        ...document.querySelectorAll('[role="listitem"]'),
+    ];
+    for (const el of candidatos) {
+        const linea = (el.innerText || el.textContent || '').trim().split('\\n')[0].trim();
+        if (linea.toLowerCase() === objetivo) {
+            el.click();
+            return linea;
+        }
+    }
+    for (const el of document.querySelectorAll('.web_ui__Cell__title')) {
+        const t = (el.innerText || '').trim().toLowerCase();
+        if (t === objetivo) {
+            el.click();
+            return el.innerText.trim();
+        }
+    }
+    return null;
 }
+"""
 
 
-def _seleccionar_condicion(page, estado_vinted: str, log_fn=None) -> bool:
-    """
-    Estado en Vinted: siempre por texto exacto, NUNCA primera sugerencia.
-    Opciones: Nuevo sin etiquetas, Nuevo con etiquetas, Muy bueno, Bueno, Satisfactorio.
-    """
-    if not page.locator("#condition").is_visible(timeout=2_000):
-        return True
-    actual = _leer_input(page, "condition")
-    if actual:
-        _log(f"Condición ya OK: {actual!r}", log_fn)
-        return True
-
-    candidatos = _ALIAS_CONDICION.get(estado_vinted, [estado_vinted])
-    _log(f"Condición → buscar {candidatos}", log_fn)
+def _abrir_condicion_vinted(page, log_fn=None) -> None:
+    """Abre el desplegable de condición (#condition / data-testid category-condition)."""
+    _cerrar_desplegables_vinted(page, log_fn)
+    for sel in (
+        "input#condition",
+        'input[data-testid="category-condition-single-list-input"]',
+    ):
+        loc = page.locator(sel)
+        if loc.count() == 0:
+            continue
+        try:
+            if loc.first.is_visible(timeout=1_500):
+                loc.first.scroll_into_view_if_needed()
+                loc.first.click(force=True)
+                _human_sleep(900, 300)
+                return
+        except Exception:
+            continue
     _abrir_desplegable(page, "condition", log_fn)
+
+
+def _condicion_vinted_ok(page, objetivo: str = VINTED_CONDICION_PUBLICACION) -> bool:
+    val = _leer_input(page, "condition")
+    return val.strip().lower() == objetivo.strip().lower()
+
+
+def _seleccionar_condicion(page, estado_vinted: str = "", log_fn=None) -> bool:
+    """
+    Condición en Vinted: siempre «Bueno» (#condition).
+    No acepta otros valores aunque el campo ya tenga texto.
+    """
+    objetivo = VINTED_CONDICION_PUBLICACION
+    if not page.locator("input#condition").is_visible(timeout=2_000):
+        return True
+
+    if _condicion_vinted_ok(page, objetivo):
+        _log(f"Condición ya OK: {objetivo!r}", log_fn)
+        return True
+
+    actual = _leer_input(page, "condition")
+    if actual and actual != objetivo:
+        _log(f"Condición actual {actual!r} → forzando {objetivo!r}", log_fn)
+
+    _log(f"Condición → {objetivo!r}", log_fn)
+    _abrir_condicion_vinted(page, log_fn)
     _human_sleep(1200, 300)
 
-    for texto in candidatos:
-        # JS click exacto (más fiable que Playwright en overlays de Vinted)
-        res = page.evaluate(_JS_CLICK_OPCION, texto)
-        if res:
-            _human_sleep(400, 100)
-            val = _leer_input(page, "condition")
-            if val:
-                _log(f"Condición OK: {val!r}", log_fn)
-                _cerrar_desplegables_vinted(page, log_fn)
-                return True
+    res = page.evaluate(_JS_CLICK_EXACTO, objetivo)
+    if res:
+        _human_sleep(500, 100)
+        if _condicion_vinted_ok(page, objetivo):
+            _log(f"Condición OK: {res!r}", log_fn)
+            _cerrar_desplegables_vinted(page, log_fn)
+            return True
 
-        # Fallback Playwright
-        if _elegir_opcion_lista(page, texto):
-            _human_sleep(400, 100)
-            val = _leer_input(page, "condition")
-            if val:
-                _log(f"Condición OK: {val!r}", log_fn)
-                _cerrar_desplegables_vinted(page, log_fn)
-                return True
+    # Fallback Playwright (coincidencia exacta en la lista visible)
+    for sel in (
+        "motion\\:div[role='button']",
+        "li.web_ui__Item__item",
+        "[role='option']",
+        ".web_ui__Cell__title",
+    ):
+        try:
+            loc = page.locator(sel).filter(has_text=objetivo)
+            visible = [
+                loc.nth(i)
+                for i in range(loc.count())
+                if loc.nth(i).inner_text().strip().split("\n")[0].strip().lower() == objetivo.lower()
+            ]
+            if visible:
+                visible[0].click(force=True)
+                _human_sleep(400, 100)
+                if _condicion_vinted_ok(page, objetivo):
+                    _log(f"Condición OK (playwright): {objetivo!r}", log_fn)
+                    _cerrar_desplegables_vinted(page, log_fn)
+                    return True
+        except Exception:
+            continue
 
     _cerrar_desplegables_vinted(page, log_fn)
-    _log(f"FALLO condición — no encontré {candidatos} en el listado", log_fn)
+    _log(f"FALLO condición — esperado {objetivo!r}, DOM={_leer_input(page, 'condition')!r}", log_fn)
     return False
 
 
@@ -547,7 +620,7 @@ def subir_vinted(producto: dict, log_fn=None) -> bool:
             )
             marca_ok = _seleccionar_marca(page, producto, log_fn)
             plat_ok = _seleccionar_plataforma(page, producto, log_fn)
-            cond_ok = _seleccionar_condicion(page, str(producto["estado_vinted"]), log_fn)
+            cond_ok = _seleccionar_condicion(page, log_fn=log_fn)
             color_ok = _seleccionar_color(page, log_fn)
             talla_ok = _seleccionar_talla(page, log_fn)
             _seleccionar_clasificacion(page, producto, log_fn)
@@ -571,7 +644,9 @@ def subir_vinted(producto: dict, log_fn=None) -> bool:
             if not marca_ok:
                 raise RuntimeError("Marca no seleccionada en Vinted")
             if not cond_ok:
-                raise RuntimeError(f"Condición no seleccionada ({producto.get('estado_vinted')})")
+                raise RuntimeError(
+                    f"Condición no seleccionada en Vinted (esperado: {VINTED_CONDICION_PUBLICACION})"
+                )
             if not precio_ok:
                 raise RuntimeError(f"Precio no aplicado ({producto.get('precio')}€)")
             if page.locator("#video_game_platform").is_visible(timeout=500) and not _leer_input(page, "video_game_platform"):

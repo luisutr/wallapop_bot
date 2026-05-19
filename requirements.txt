@@ -1,7 +1,10 @@
 playwright
 pandas
 certifi
+setuptools
 undetected-chromedriver
+fuzzywuzzy
+python-Levenshtein
 wallapy
 vinted-scraper
 rich

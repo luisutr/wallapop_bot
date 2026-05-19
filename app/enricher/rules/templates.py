@@ -86,7 +86,8 @@ def generar_descripcion(
 ) -> str:
     template = TEMPLATES.get(tipo, TEMPLATES["otro"])
     estado_map = ESTADO_WALLAPOP if para_wallapop else ESTADO_VINTED
-    default = "En buen estado" if para_wallapop else "Bueno"
+    from config import VINTED_CONDICION_PUBLICACION
+    default = "En buen estado" if para_wallapop else VINTED_CONDICION_PUBLICACION
     estado_texto = estado_map.get(estado_key, default)
     return template.format(
         titulo_completo=titulo_completo,

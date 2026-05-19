@@ -290,7 +290,11 @@ class WallapopBotGUI:
         win.transient(self.root)
         win.grab_set()
 
-        nombre = "Wallapop" if plataforma == "wallapop" else "Vinted (Chrome sin detección de bots)"
+        nombre = (
+            "Wallapop (Chrome sin detección de bots)"
+            if plataforma == "wallapop"
+            else "Vinted (Chrome sin detección de bots)"
+        )
         ttk.Label(
             win,
             text=f"Se ha abierto el navegador.\n\n"

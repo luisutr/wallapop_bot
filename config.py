@@ -23,6 +23,8 @@ PRECIO_FALLBACK = 10.0
 # ── Estado del producto ─────────────────────────────────────────────────────
 # Valores válidos en meta.json → "estado": "<clave>"
 ESTADO_DEFAULT = "bueno"  # → En buen estado en Wallapop
+# Valor por defecto al publicar en Wallapop (texto visible del desplegable Estado*)
+WALLAPOP_ESTADO_PUBLICACION = "En buen estado"
 
 # Textos EXACTOS del dropdown Estado en Wallapop (aria-label de walla-dropdown-item)
 ESTADOS_WALLAPOP_VALIDOS: tuple[str, ...] = (
@@ -47,12 +49,15 @@ ESTADO_WALLAPOP: dict[str, str] = {
     "dado_todo":    "Lo ha dado todo",
 }
 
+# Texto exacto del input #condition en el formulario de subida de Vinted
+VINTED_CONDICION_PUBLICACION = "Bueno"
+
 ESTADO_VINTED: dict[str, str] = {
-    "nuevo":       "Nuevo sin etiquetas",
-    "como_nuevo":  "Nuevo sin etiquetas",
-    "buen_estado": "Muy bueno",
+    "nuevo":       "Bueno",
+    "como_nuevo":  "Bueno",
+    "buen_estado": "Bueno",
     "bueno":       "Bueno",
-    "aceptable":   "Satisfactorio",
+    "aceptable":   "Bueno",
 }
 
 # ── Videojuegos (Vinted) ────────────────────────────────────────────────────

@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional
 
-from config import ESTADO_WALLAPOP, ESTADO_VINTED, PEGI_DEFAULT
+from config import ESTADO_WALLAPOP, ESTADO_VINTED, PEGI_DEFAULT, VINTED_CONDICION_PUBLICACION
 from .identifier import InfoProducto
 from .rules.categories import CATEGORIAS_WALLAPOP, CATEGORIAS_VINTED
 from .rules.templates import generar_descripcion
@@ -57,7 +57,7 @@ def generar_contenido(
 
     # ── Estado ───────────────────────────────────────────────────────────────
     estado_wallapop = ESTADO_WALLAPOP.get(estado_key, "En buen estado")
-    estado_vinted   = ESTADO_VINTED.get(estado_key, "Nuevo sin etiquetas")
+    estado_vinted   = ESTADO_VINTED.get(estado_key, VINTED_CONDICION_PUBLICACION)
 
     # ── Descripciones ─────────────────────────────────────────────────────────
     plataforma_nombre = plataforma["nombre"] if plataforma else ""

@@ -7,7 +7,13 @@ from typing import Callable, Optional
 
 from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout
 
-from config import WALLAPOP_STATE_PATH, WALLAPOP_UPLOAD_URL, ERRORES_DIR
+from config import (
+    ERRORES_DIR,
+    ESTADOS_WALLAPOP_VALIDOS,
+    WALLAPOP_ESTADO_PUBLICACION,
+    WALLAPOP_STATE_PATH,
+    WALLAPOP_UPLOAD_URL,
+)
 from app.publishers.form_audit import PublishAudit, raise_if_not_verified
 
 SUMMARY_MAX = 50
@@ -56,80 +62,391 @@ def _leer_valor_dropdown_wallapop(page, testid: str) -> str:
     """Lee el texto mostrado en un walla-dropdown (Estado, Categoría…)."""
     return page.evaluate(
         """(testid) => {
-            const dd = document.querySelector(`[data-testid="${testid}"]`);
+            const dd = document.querySelector(`walla-dropdown[data-testid="${testid}"]`)
+                || document.querySelector(`[data-testid="${testid}"]`);
             if (!dd) return '';
-            const inp = dd.querySelector('input.sc-walla-text-input, input[type="text"]');
-            if (inp && inp.value) return inp.value;
-            const hidden = dd.querySelector('input[type="hidden"]');
-            if (hidden && hidden.value) return hidden.value;
-            const label = dd.getAttribute('aria-label') || '';
-            return label;
+            const vis = dd.querySelector(
+                'input.sc-walla-text-input, input[type="text"]:not([type="hidden"])'
+            );
+            if (vis && vis.value) return vis.value.trim();
+            const hidden = document.querySelector(`input#${testid}, input[name="${testid}"]`)
+                || dd.querySelector('input[type="hidden"]');
+            if (hidden && hidden.value) return String(hidden.value).trim();
+            return '';
         }""",
         testid,
     ) or ""
 
 
-def _seleccionar_estado(page, estado_texto: str, log_fn=None) -> bool:
+def _leer_input_id(page, field_id: str) -> str:
+    loc = page.locator(f"input#{field_id}")
+    if loc.count() == 0:
+        return ""
+    try:
+        return (loc.first.input_value() or "").strip()
+    except Exception:
+        return ""
+
+
+def _categoria_wallapop_ok(page) -> bool:
+    """True si Wallapop ya autocompletó la categoría (hoja o campo visible)."""
+    return bool(
+        page.evaluate(
+            """() => {
+                const leaf = document.querySelector('input[name="category_leaf_id"]');
+                if (leaf && leaf.value) return true;
+                const cat = document.querySelector('input#category');
+                if (cat && cat.value) return true;
+                for (const inp of document.querySelectorAll('input[type="text"]')) {
+                    const lbl = inp.getAttribute('aria-label') || '';
+                    if (lbl.includes('Categoría') && inp.value.trim()) return true;
+                }
+                return false;
+            }"""
+        )
+    )
+
+
+def _esperar_formulario_detalles(page, log_fn=None) -> None:
+    page.wait_for_selector('input#title[name="title"]', state="visible", timeout=60_000)
+    _log("Formulario de detalles visible — esperando autocompletado…", log_fn)
+    time.sleep(3)
+
+
+def _abrir_dropdown_wallapop(page, testid: str, label_fragment: str = "") -> bool:
     """
-    Selecciona estado por aria-label exacto en walla-dropdown-item.
-    Opciones Wallapop: Sin abrir, En su caja, Nuevo, Como nuevo,
-    En buen estado, En condiciones aceptables, Lo ha dado todo.
+    Abre walla-dropdown clicando su trigger real:
+      div.walla-dropdown__inner-input[role="button"][slot="floating-area-target-element"]
+    Este div está en el LIGHT DOM dentro de walla-floating-area.
+    El host walla-dropdown y el input[type=text] con tabindex=-1 NO son el trigger.
+    Devuelve True si el flotante quedó abierto (aria-expanded=true).
     """
-    from config import ESTADOS_WALLAPOP_VALIDOS
+    opened = page.evaluate(
+        """(testid) => {
+            const dd = document.querySelector(`walla-dropdown[data-testid="${testid}"]`)
+                    || document.querySelector(`[data-testid="${testid}"]`);
+            if (!dd) return false;
+            // Trigger real: div.walla-dropdown__inner-input[role="button"]
+            const trigger =
+                dd.querySelector('div.walla-dropdown__inner-input[role="button"]')
+                || dd.querySelector('[role="button"][slot="floating-area-target-element"]')
+                || dd.querySelector('[role="button"]');
+            if (!trigger) return false;
+            trigger.scrollIntoView({ block: 'center' });
+            trigger.focus();
+            trigger.click();
+            return trigger.getAttribute('aria-expanded') !== 'false';
+        }""",
+        testid,
+    )
+    time.sleep(0.7)
 
-    _log(f"Estado → {estado_texto!r}", log_fn)
-    _cerrar_modales(page, log_fn)
-
-    cond = page.locator('[data-testid="condition"]')
-    cond.wait_for(state="visible", timeout=10_000)
-    cond.scroll_into_view_if_needed()
-    cond.click()
-    time.sleep(1.2)
-
-    # 1) aria-label exacto
-    exact = page.locator(f'walla-dropdown-item[aria-label="{estado_texto}"]')
-    if exact.count() > 0:
-        exact.first.click()
-        time.sleep(0.4)
-        _log(f"Estado OK (exacto): {estado_texto}", log_fn)
+    # Verificar que el flotante quedó abierto
+    expanded = page.evaluate(
+        """(testid) => {
+            const dd = document.querySelector(`walla-dropdown[data-testid="${testid}"]`);
+            if (!dd) return false;
+            const trigger = dd.querySelector('div.walla-dropdown__inner-input[role="button"]');
+            return trigger ? trigger.getAttribute('aria-expanded') === 'true' : false;
+        }""",
+        testid,
+    )
+    if expanded:
         return True
 
-    # 2) Recorrer opciones válidas de Wallapop
-    opciones = page.locator('walla-dropdown-item[role="option"]')
-    for i in range(opciones.count()):
-        aria = (opciones.nth(i).get_attribute("aria-label") or "").strip()
-        if aria == estado_texto:
-            opciones.nth(i).click()
-            _log(f"Estado OK: {aria}", log_fn)
+    # Fallback Playwright con force=True sobre el trigger div
+    try:
+        loc = page.locator(
+            f'walla-dropdown[data-testid="{testid}"] '
+            'div.walla-dropdown__inner-input[role="button"]'
+        )
+        if loc.count() > 0:
+            loc.first.scroll_into_view_if_needed()
+            loc.first.click(force=True)
+            time.sleep(0.7)
             return True
+    except Exception:
+        pass
+    return False
 
-    # 3) Fallback: «En buen estado» si pedían algo inexistente como «Bueno»
-    if estado_texto.lower() == "bueno":
-        return _seleccionar_estado(page, "En buen estado", log_fn)
 
-    # 4) JS con lista oficial
+def _click_opcion_wallapop(page, texto: str, log_fn=None) -> bool:
+    """
+    Elige una opción del desplegable Stencil por aria-label exacto.
+    Usa JS directo porque Playwright a veces falla en web components con Shadow DOM.
+    """
+    texto = texto.strip()
+
+    # 1) JS directo: busca por aria-label y dispara el click con todos los eventos
     ok = page.evaluate(
-        """(estado) => {
-            for (const item of document.querySelectorAll('walla-dropdown-item[role="option"]')) {
-                if (item.getAttribute('aria-label') === estado) {
-                    item.click();
-                    return estado;
-                }
+        """(objetivo) => {
+            const item = document.querySelector(
+                `walla-dropdown-item[role="option"][aria-label="${objetivo}"]`
+            );
+            if (!item) return false;
+            item.scrollIntoView({ block: 'center' });
+            // Disparar eventos completos para que Stencil/Angular reaccionen
+            ['mousedown', 'mouseup', 'click'].forEach(evt =>
+                item.dispatchEvent(new MouseEvent(evt, { bubbles: true, cancelable: true }))
+            );
+            // También el div interior por si el listener está ahí
+            const inner = item.querySelector('div.sc-walla-dropdown-item, div');
+            if (inner) {
+                ['mousedown', 'mouseup', 'click'].forEach(evt =>
+                    inner.dispatchEvent(new MouseEvent(evt, { bubbles: true, cancelable: true }))
+                );
             }
-            return null;
+            return true;
         }""",
-        estado_texto,
+        texto,
     )
     if ok:
-        _log(f"Estado OK (JS): {ok}", log_fn)
+        time.sleep(0.4)
+        _log(f"Opción click JS: {texto!r}", log_fn)
+        return True
+
+    # 2) Fallback Playwright con force=True (ignora pointer-events)
+    for sel in (
+        f'walla-dropdown-item[role="option"][aria-label="{texto}"]',
+        "walla-dropdown-item[role='option']",
+        ".walla-dropdown__floating-area [role='option']",
+    ):
+        opts = page.locator(sel)
+        for i in range(min(opts.count(), 10)):
+            el = opts.nth(i)
+            try:
+                aria = (el.get_attribute("aria-label") or "").strip()
+                if sel.endswith("[role='option']") and aria != texto:
+                    continue
+                el.scroll_into_view_if_needed()
+                el.click(force=True)
+                time.sleep(0.4)
+                _log(f"Opción click PW: {texto!r}", log_fn)
+                return True
+            except Exception:
+                continue
+    return False
+
+
+def _cerrar_dropdown_abierto(page) -> None:
+    try:
+        page.keyboard.press("Escape")
+        time.sleep(0.2)
+    except Exception:
+        pass
+
+
+def _abrir_y_primera_sugerencia(page, field_id: str, log_fn=None) -> bool:
+    inp = page.locator(f"input#{field_id}")
+    if inp.count() == 0 or not inp.first.is_visible(timeout=1_500):
+        return False
+    inp.first.scroll_into_view_if_needed()
+    inp.first.click()
+    time.sleep(1.2)
+    items = page.locator(
+        ".walla-dropdown__floating-area walla-dropdown-item, "
+        "walla-dropdown-item[role='option']"
+    )
+    if items.count() > 0:
+        items.first.click()
+        time.sleep(0.4)
+        _log(f"#{field_id} → 1ª sugerencia", log_fn)
+        return bool(_leer_input_id(page, field_id))
+    page.keyboard.press("ArrowDown")
+    time.sleep(0.2)
+    page.keyboard.press("Enter")
+    time.sleep(0.4)
+    return bool(_leer_input_id(page, field_id))
+
+
+def _asegurar_desplegables_wallapop(page, log_fn=None) -> None:
+    """
+    Deja que Wallapop autocomplete categoría/plataforma.
+    Solo abre el desplegable y elige la 1ª opción si el campo sigue vacío.
+    """
+    if _categoria_wallapop_ok(page):
+        _log("Categoría ya autorellenada por Wallapop", log_fn)
+    elif page.locator("input#category").count() > 0:
+        if not _leer_input_id(page, "category"):
+            time.sleep(2)
+            if not _leer_input_id(page, "category"):
+                _abrir_y_primera_sugerencia(page, "category", log_fn)
+
+    if page.locator("input#video_game_platform").count() == 0:
+        return
+    if _leer_input_id(page, "video_game_platform"):
+        _log("#video_game_platform ya autorellenado", log_fn)
+        return
+    time.sleep(1.5)
+    if not _leer_input_id(page, "video_game_platform"):
+        _abrir_y_primera_sugerencia(page, "video_game_platform", log_fn)
+
+
+def _estado_wallapop_objetivo(estado_texto: str) -> str:
+    t = (estado_texto or "").strip()
+    if t in ESTADOS_WALLAPOP_VALIDOS:
+        return t
+    if t.lower() == "bueno":
+        return WALLAPOP_ESTADO_PUBLICACION
+    return WALLAPOP_ESTADO_PUBLICACION
+
+
+def _aria_selected_ok(page, objetivo: str) -> bool:
+    """True si walla-dropdown-item con el label correcto tiene aria-selected=true."""
+    return page.evaluate(
+        """(obj) => {
+            for (const item of document.querySelectorAll(
+                'walla-dropdown-item[role="option"]'
+            )) {
+                if (item.getAttribute('aria-label') === obj
+                        && item.getAttribute('aria-selected') === 'true') {
+                    return true;
+                }
+            }
+            return false;
+        }""",
+        objetivo,
+    )
+
+
+def _leer_condition_hidden(page) -> str:
+    """Lee input.walla-dropdown__inner-input__hidden-input#condition via JS (type=hidden)."""
+    return page.evaluate(
+        """() => {
+            const inp = document.querySelector(
+                'input.walla-dropdown__inner-input__hidden-input#condition, '
+                + 'input#condition[type="hidden"]'
+            );
+            return inp ? (inp.value || '') : '';
+        }"""
+    ) or ""
+
+
+def _estado_aplicado(page, objetivo: str) -> bool:
+    """
+    Verifica si el estado ya está correctamente seleccionado.
+    Los walla-dropdown-item tienen aria-selected accesible incluso con el dropdown cerrado.
+    """
+    # Criterio 1: aria-selected="true" en el item concreto (más fiable, funciona en abierto y cerrado)
+    if _aria_selected_ok(page, objetivo):
+        return True
+    # Criterio 2: aria-label del trigger contiene el texto (p.ej. "Estado*, En buen estado")
+    label_ok = page.evaluate(
+        """(obj) => {
+            const trigger = document.querySelector(
+                'walla-dropdown[data-testid="condition"] [role="button"]'
+            );
+            if (!trigger) return false;
+            const lbl = trigger.getAttribute('aria-label') || '';
+            return lbl.toLowerCase().includes(obj.toLowerCase());
+        }""",
+        objetivo,
+    )
+    if label_ok:
+        return True
+    # Criterio 3: hidden input tiene valor distinto de vacío
+    # (solo como último recurso; no verifica si coincide con objetivo)
+    return bool(_leer_condition_hidden(page))
+
+
+def _cerrar_dropdown_condition(page) -> None:
+    """Cierra el dropdown de estado sin perder la selección (clic en título o Tab)."""
+    try:
+        # Clic en el título del formulario (fuera del dropdown, no en Escape)
+        tit = page.locator('input#title[name="title"]')
+        if tit.count() > 0 and tit.first.is_visible(timeout=500):
+            tit.first.click(force=True)
+            time.sleep(0.5)
+            return
+    except Exception:
+        pass
+    try:
+        page.keyboard.press("Tab")
+        time.sleep(0.3)
+    except Exception:
+        pass
+
+
+def _seleccionar_estado(page, estado_texto: str, log_fn=None) -> bool:
+    """
+    Selecciona estado en walla-dropdown[data-testid=condition].
+    El click funciona y pone aria-selected=true; después cierra el dropdown
+    con clic exterior para que Angular actualice el formulario.
+    """
+    objetivo = _estado_wallapop_objetivo(estado_texto)
+    _log(f"Estado → {objetivo!r}", log_fn)
+    _cerrar_modales(page, log_fn)
+
+    if _estado_aplicado(page, objetivo):
+        _log(f"Estado ya OK: {objetivo}", log_fn)
+        return True
+
+    abierto = _abrir_dropdown_wallapop(page, "condition", "Estado")
+    if not abierto:
+        _log("Flotante no se abrió — reintentando con Playwright…", log_fn)
+        # Segundo intento: locator Playwright sobre el trigger div
+        try:
+            trig = page.locator(
+                'walla-dropdown[data-testid="condition"] '
+                'div.walla-dropdown__inner-input[role="button"]'
+            )
+            if trig.count() > 0:
+                trig.first.scroll_into_view_if_needed()
+                trig.first.click(force=True)
+                time.sleep(1.0)
+        except Exception:
+            pass
+
+    try:
+        page.wait_for_selector(
+            "walla-dropdown-item[role='option']",
+            timeout=5_000,
+        )
+    except PWTimeout:
+        _log("No aparecieron opciones de estado", log_fn)
+        return False
+
+    time.sleep(0.5)
+    clicked = _click_opcion_wallapop(page, objetivo, log_fn)
+    if clicked:
+        time.sleep(0.6)
+        # Cerrar con clic exterior para que Angular/Stencil dispare el evento de cambio
+        _cerrar_dropdown_condition(page)
+        time.sleep(0.5)
+        if _estado_aplicado(page, objetivo):
+            _log(f"Estado confirmado: {objetivo}", log_fn)
+            return True
+        # Segunda comprobación: aria-selected puede persistir aunque el dropdown esté cerrado
+        if _aria_selected_ok(page, objetivo):
+            _log(f"Estado aria-selected OK: {objetivo}", log_fn)
+            return True
+
+    # Fallback: teclado (Tab al dropdown + ArrowDown hasta el item + Enter)
+    _log("Fallback teclado para estado…", log_fn)
+    _abrir_dropdown_wallapop(page, "condition", "Estado")
+    time.sleep(0.8)
+    opciones = list(ESTADOS_WALLAPOP_VALIDOS)
+    try:
+        idx = opciones.index(objetivo)
+    except ValueError:
+        idx = 4  # "En buen estado" es la 5ª (índice 4)
+    for _ in range(idx + 1):
+        page.keyboard.press("ArrowDown")
+        time.sleep(0.15)
+    page.keyboard.press("Enter")
+    time.sleep(0.6)
+    _cerrar_dropdown_condition(page)
+    time.sleep(0.4)
+    if _estado_aplicado(page, objetivo):
+        _log(f"Estado OK (teclado): {objetivo}", log_fn)
         return True
 
     disponibles = page.evaluate(
-        """() => [...document.querySelectorAll('walla-dropdown-item[role="option"]')]
-            .map(i => i.getAttribute('aria-label')).filter(Boolean)"""
+        """() => [...document.querySelectorAll(
+            'walla-dropdown-item[role="option"]'
+        )].map(i => i.getAttribute('aria-label')).filter(Boolean)"""
     )
-    _log(f"FALLO estado. Opciones en pantalla: {disponibles}", log_fn)
-    _log(f"Valores válidos: {list(ESTADOS_WALLAPOP_VALIDOS)}", log_fn)
+    _log(f"FALLO estado. Opciones: {disponibles}", log_fn)
     return False
 
 
@@ -184,9 +501,17 @@ def _rellenar_precio(page, precio: float, log_fn=None) -> bool:
             label.first.click(force=True)
         else:
             loc.click(force=True)
-        loc.fill(texto, force=True)
+        loc.fill("", force=True)
+        loc.type(texto, delay=40)
         page.keyboard.press("Tab")
-        time.sleep(0.3)
+        time.sleep(0.4)
+
+    if not (loc.input_value() or "").strip():
+        loc.click(force=True)
+        loc.fill(texto, force=True)
+        page.dispatch_event("input#price_amount", "input")
+        page.keyboard.press("Tab")
+        time.sleep(0.4)
 
     invalid = loc.get_attribute("aria-invalid")
     val = (loc.input_value() or "").strip()
@@ -204,39 +529,93 @@ def _rellenar_precio(page, precio: float, log_fn=None) -> bool:
 
 
 def _rellenar_detalles(page, titulo: str, descripcion: str, log_fn=None) -> None:
-    """Rellena título y descripción usando input# (evita span#title del modal)."""
+    """
+    Rellena título y descripción SOLO si Wallapop los dejó vacíos.
+    Si ya tienen contenido (auto-generado por Wallapop), se respeta.
+    """
     _cerrar_modales(page, log_fn)
     tit = page.locator('input#title[name="title"]')
     tit.wait_for(state="visible", timeout=10_000)
-    tit.click()
-    tit.fill(titulo)
-    page.dispatch_event('input#title[name="title"]', "input")
 
-    desc = page.locator("textarea#description, input#description").first
-    desc.click()
-    desc.fill(descripcion)
-    page.dispatch_event("textarea#description", "input")
+    # Título: solo rellenar si está vacío
+    val_tit = (tit.first.input_value() or "").strip()
+    if not val_tit:
+        tit.first.click()
+        tit.first.fill(titulo)
+        page.dispatch_event('input#title[name="title"]', "input")
+        _log(f"Título rellenado: {titulo!r}", log_fn)
+    else:
+        _log(f"Título ya tiene valor (Wallapop): {val_tit!r} — se respeta", log_fn)
+
+    # Descripción: solo rellenar si está vacía
+    desc = page.locator("textarea#description").first
+    if desc.count() == 0:
+        desc = page.locator("input#description").first
+    val_desc = ""
+    try:
+        val_desc = (desc.input_value() or "").strip()
+    except Exception:
+        pass
+    if not val_desc:
+        desc.click()
+        desc.fill(descripcion)
+        page.dispatch_event("textarea#description", "input")
+        _log("Descripción rellenada", log_fn)
+    else:
+        _log("Descripción ya tiene valor (Wallapop) — se respeta", log_fn)
+
     time.sleep(0.3)
 
 
-def _seleccionar_peso(page, log_fn=None) -> None:
-    radio = page.locator('input[aria-label="Delivery Option 0"]')
-    if radio.count() > 0:
-        radio.first.click()
-        _log("Peso: 0-1 kg", log_fn)
-        return
-    page.locator("input.walla-radio__input").first.click()
-
-
-def _seleccionar_categoria(page, log_fn=None) -> None:
-    cat = page.locator('[aria-label="Categoría y subcategoría"]')
-    cat.wait_for(state="visible", timeout=15_000)
-    cat.click()
-    time.sleep(2)
-    items = page.locator(".walla-dropdown__floating-area walla-dropdown-item")
-    if items.count() > 0:
-        items.first.click()
-        _log("Categoría seleccionada", log_fn)
+def _seleccionar_peso(page, log_fn=None) -> bool:
+    """Paquete pequeño: radio 0-1 kg (Delivery Option 0)."""
+    # Selectores válidos (sin #0 que es CSS inválido)
+    for sel in (
+        'input[aria-label="Delivery Option 0"][value="0"]',
+        'input.walla-radio__input[aria-label="Delivery Option 0"]',
+        'input[aria-label="Delivery Option 0"]',
+        'input.walla-radio__input[id="0"]',
+    ):
+        try:
+            radio = page.locator(sel)
+        except Exception:
+            continue
+        if radio.count() == 0:
+            continue
+        try:
+            radio.first.scroll_into_view_if_needed()
+            if not radio.first.is_checked(timeout=500):
+                radio.first.check(force=True)
+            if radio.first.is_checked(timeout=1_000):
+                _log("Peso: 0-1 kg (Delivery Option 0)", log_fn)
+                return True
+        except Exception:
+            try:
+                radio.first.click(force=True)
+                time.sleep(0.3)
+                if radio.first.is_checked(timeout=800):
+                    _log("Peso: 0-1 kg (click)", log_fn)
+                    return True
+            except Exception:
+                continue
+    # Último recurso: JS directo
+    ok = page.evaluate(
+        """() => {
+            for (const r of document.querySelectorAll('input.walla-radio__input, input[type="radio"]')) {
+                if (r.getAttribute('aria-label') === 'Delivery Option 0'
+                    || r.getAttribute('value') === '0' && r.name === '0') {
+                    r.click();
+                    return r.checked;
+                }
+            }
+            return false;
+        }"""
+    )
+    if ok:
+        _log("Peso: 0-1 kg (JS)", log_fn)
+        return True
+    _log("FALLO peso — no se marcó Delivery Option 0", log_fn)
+    return False
 
 
 def subir_wallapop(
@@ -251,7 +630,9 @@ def subir_wallapop(
     slug = producto.get("slug", "producto")
     titulo = str(producto["titulo"])[:SUMMARY_MAX]
     audit = PublishAudit("wallapop", slug, producto, log_fn=log_fn)
-    estado_texto = producto.get("estado_texto", "En buen estado")
+    estado_texto = _estado_wallapop_objetivo(
+        producto.get("estado_texto", WALLAPOP_ESTADO_PUBLICACION)
+    )
     precio = float(producto["precio"])
 
     _log(f"Publicando: {titulo}", log_fn)
@@ -280,27 +661,28 @@ def subir_wallapop(
             time.sleep(2)
             _click_continuar(page, timeout=180_000, log_fn=log_fn)
 
-            _seleccionar_categoria(page, log_fn)
-            time.sleep(1)
+            _esperar_formulario_detalles(page, log_fn)
             _cerrar_modales(page, log_fn)
 
-            # Paso detalles — selectores estrictos input#
-            page.wait_for_selector('input#title[name="title"]', state="visible", timeout=15_000)
             _rellenar_detalles(page, titulo, str(producto["descripcion"]), log_fn)
+            _asegurar_desplegables_wallapop(page, log_fn)
 
             estado_ok = _seleccionar_estado(page, estado_texto, log_fn)
             precio_ok = _rellenar_precio(page, precio, log_fn)
-            _seleccionar_peso(page, log_fn)
+            peso_ok = _seleccionar_peso(page, log_fn)
 
             audit.snapshot(page, "despues_rellenar_detalles", {
                 "estado_ok": estado_ok,
                 "precio_ok": precio_ok,
+                "peso_ok": peso_ok,
             })
 
             if not estado_ok:
                 raise RuntimeError(f"Estado no aplicado en Wallapop (esperado: {estado_texto})")
             if not precio_ok:
                 raise RuntimeError(f"Precio no aplicado en Wallapop (esperado: {precio}€)")
+            if not peso_ok:
+                raise RuntimeError("Peso/envío no seleccionado (0-1 kg)")
 
             pre = audit.check_before_submit(page)
             if not pre["ok"]:

@@ -2,6 +2,13 @@
 
 Publicación automática de lotes de productos en Wallapop y Vinted.
 
+## Estado del proyecto
+
+| Plataforma | Estado | Notas |
+|------------|--------|-------|
+| **Vinted** | ✅ Terminado (local) | Publicación probada y funcionando: condición «Bueno», plataforma, precio y formulario. |
+| **Wallapop** | 🔄 En progreso | Sesión con undetected-chromedriver; estado del listado y autocompletado en revisión. |
+
 ---
 
 ## Instalación

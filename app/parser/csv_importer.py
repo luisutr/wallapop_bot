@@ -10,6 +10,8 @@ from __future__ import annotations
 import json
 import re
 import shutil
+import subprocess
+import sys
 import unicodedata
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -28,6 +30,7 @@ class ProductoCSV:
     slug: str = ""
     imagenes_encontradas: list[Path] = field(default_factory=list)
     imagenes_faltantes: list[str] = field(default_factory=list)
+    isbn: str = ""
 
     @property
     def listo(self) -> bool:
@@ -54,85 +57,139 @@ def _parsear_precio(texto: str) -> float:
 
 
 def parsear_linea_csv(linea: str) -> ProductoCSV | None:
-    """Parsea una línea del CSV de inventario."""
-    linea = linea.strip()
-    if not linea or linea.lower().startswith("producto"):
-        return None
-
-    m = PRICE_TAIL_RE.search(linea)
-    if not m:
-        return None
-
-    precio = _parsear_precio(m.group(1))
-    resto = linea[: m.start()].strip()
-
-    # Título = hasta la primera coma (fuera de comillas iniciales)
-    if resto.startswith('"'):
-        # "titulo con, coma", imgs...
-        pass
-
-    primera_coma = resto.find(",")
-    if primera_coma < 0:
-        return None
-
-    titulo = resto[:primera_coma].strip().strip('"')
-    imgs_raw = resto[primera_coma + 1 :].strip().strip('"')
-
-    imagenes = [
-        img.strip().strip('"')
-        for img in re.split(r",\s*", imgs_raw)
-        if img.strip()
-        and any(ext in img.lower() for ext in (".jpg", ".jpeg", ".png", ".webp"))
-    ]
-    # Si el split falló (una sola imagen sin extensión detectada)
-    if not imagenes and imgs_raw:
-        imagenes = [imgs_raw.strip()]
-
-    slug = _slug_desde_titulo_o_imagen(titulo, imagenes[0] if imagenes else "")
-
-    return ProductoCSV(
-        titulo=titulo,
-        precio=precio,
-        imagenes=imagenes,
-        slug=slug,
-    )
+    # Deprecado: la lectura ahora se realiza a través del lector de csv estándar
+    return None
 
 
 def leer_csv_inventario(csv_path: Path) -> list[ProductoCSV]:
-    """Lee todas las filas del CSV."""
-    texto = csv_path.read_text(encoding="utf-8-sig")
+    """Lee todas las filas del CSV utilizando el módulo csv estándar."""
+    import csv
     productos: list[ProductoCSV] = []
     slugs_usados: dict[str, int] = {}
 
-    for linea in texto.splitlines():
-        p = parsear_linea_csv(linea)
-        if not p:
+    try:
+        texto = csv_path.read_text(encoding="utf-8-sig")
+    except Exception:
+        texto = csv_path.read_text(encoding="latin1")
+
+    reader = csv.reader(texto.splitlines())
+    header = next(reader, None)  # Saltar cabecera
+
+    for row in reader:
+        if not row or not row[0].strip():
             continue
-        # Slugs únicos
-        base = p.slug
+        # Evitar procesar cabecera secundaria si se duplicó
+        if row[0].lower().startswith("producto") or row[0].lower().startswith("titulo"):
+            continue
+
+        titulo = row[0].strip()
+        imgs_raw = row[1].strip() if len(row) > 1 else ""
+        precio_raw = row[2].strip() if len(row) > 2 else "0"
+        isbn = row[3].strip() if len(row) > 3 else ""
+
+        try:
+            precio = _parsear_precio(precio_raw)
+        except Exception:
+            precio = 0.0
+
+        # Parsear imágenes (separadas por comas, punto y coma o espacios)
+        imagenes = [
+            img.strip()
+            for img in re.split(r"[,;]\s*", imgs_raw)
+            if img.strip()
+            and any(ext in img.lower() for ext in (".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif", ".heic", ".heif"))
+        ]
+        if not list(imagenes) and imgs_raw:
+            imagenes = [imgs_raw.strip()]
+
+        slug = _slug_desde_titulo_o_imagen(titulo, imagenes[0] if imagenes else "")
+
+        # Garantizar slug único
+        base = slug
         if base in slugs_usados:
             slugs_usados[base] += 1
-            p.slug = f"{base}_{slugs_usados[base]}"
+            slug = f"{base}_{slugs_usados[base]}"
         else:
             slugs_usados[base] = 0
-        productos.append(p)
+
+        productos.append(
+            ProductoCSV(
+                titulo=titulo,
+                precio=precio,
+                imagenes=list(imagenes),
+                slug=slug,
+                isbn=isbn,
+            )
+        )
 
     return productos
 
 
+def convert_heic_to_jpg(src_path: Path, dest_path: Path) -> bool:
+    """Convierte una imagen HEIC/HEIF a JPG. Retorna True si tiene éxito."""
+    # Intentar usar la herramienta nativa sips de macOS ya que es sumamente rápida y preinstalada
+    if sys.platform == "darwin":
+        try:
+            subprocess.run(
+                ["sips", "-s", "format", "jpeg", str(src_path), "--out", str(dest_path)],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=True
+            )
+            if dest_path.exists():
+                return True
+        except Exception:
+            pass
+
+    # Alternativa/Fallback: usar pillow_heif si está disponible
+    try:
+        from PIL import Image
+        import pillow_heif
+        pillow_heif.register_heif_opener()
+        img = Image.open(src_path)
+        img.convert("RGB").save(dest_path, "JPEG")
+        return True
+    except Exception:
+        pass
+
+    return False
+
+
 def resolver_imagenes(productos: list[ProductoCSV], carpeta_imagenes: Path) -> None:
-    """Busca cada imagen en la carpeta y rellena encontradas/faltantes."""
+    """Busca cada imagen en la carpeta (incluyendo subcarpetas) y rellena encontradas/faltantes."""
     carpeta_imagenes = carpeta_imagenes.resolve()
     indice: dict[str, Path] = {}
-    for f in carpeta_imagenes.iterdir():
-        if f.is_file() and f.suffix.lower() in EXTENSIONES_IMAGEN:
-            indice[f.name.lower()] = f
+    
+    # Extensiones a buscar: las estándar + HEIC/HEIF
+    extensiones_busqueda = list(EXTENSIONES_IMAGEN) + [".heic", ".heif"]
+    
+    # Búsqueda recursiva para indexar imágenes de subcarpetas (como "converted")
+    for ext in extensiones_busqueda:
+        for f in carpeta_imagenes.rglob(f"*{ext}"):
+            if f.is_file():
+                indice[f.name.lower()] = f
+        for f in carpeta_imagenes.rglob(f"*{ext.upper()}"):
+            if f.is_file():
+                indice[f.name.lower()] = f
 
     for p in productos:
         p.imagenes_encontradas = []
         p.imagenes_faltantes = []
         for nombre in p.imagenes:
-            path = indice.get(nombre.lower())
+            path = None
+            path_obj = Path(nombre)
+            # Si el original es HEIC/HEIF, buscar primero si ya existe versión convertida (.jpg, .png, etc.)
+            if path_obj.suffix.lower() in (".heic", ".heif"):
+                for ext in EXTENSIONES_IMAGEN:
+                    posible_nombre = f"{path_obj.stem}{ext}".lower()
+                    path = indice.get(posible_nombre)
+                    if path:
+                        break
+            
+            # Si no existe versión convertida, buscar el archivo original (incluyendo HEIC)
+            if not path:
+                path = indice.get(nombre.lower())
+
             if path:
                 p.imagenes_encontradas.append(path)
             else:
@@ -177,7 +234,15 @@ def importar_a_lote(
 
         for i, img_path in enumerate(sorted(p.imagenes_encontradas), 1):
             ext = img_path.suffix.lower()
-            shutil.copy2(img_path, dest / f"{i:02d}{ext}")
+            if ext in (".heic", ".heif"):
+                # Convertir HEIC a JPG dinámicamente
+                dest_img = dest / f"{i:02d}.jpg"
+                exito = convert_heic_to_jpg(img_path, dest_img)
+                if not exito:
+                    # Fallback si falla: copiar original
+                    shutil.copy2(img_path, dest / f"{i:02d}{ext}")
+            else:
+                shutil.copy2(img_path, dest / f"{i:02d}{ext}")
 
         meta = {
             "titulo": p.titulo,
@@ -185,6 +250,9 @@ def importar_a_lote(
             "estado": estado,
             "publicar_en": publicar_en,
         }
+        if getattr(p, "isbn", ""):
+            meta["isbn"] = p.isbn
+
         with open(dest / "meta.json", "w", encoding="utf-8") as f:
             json.dump(meta, f, indent=2, ensure_ascii=False)
 

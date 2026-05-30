@@ -1,60 +1,77 @@
 from __future__ import annotations
 
 import certifi
+import json
 import os
 import pickle
 from typing import Callable, Optional
+from pathlib import Path
 
 from config import VINTED_COOKIES_PATH, VINTED_STATE_PATH, SESIONES_DIR
-
-from ._playwright_storage import (
-    read_local_storage,
-    save_storage_state,
-    selenium_cookies_to_playwright,
-)
 
 
 def guardar_sesion_vinted(wait_fn: Optional[Callable[[], None]] = None) -> None:
     """
-    Chrome sin detección de bots (undetected_chromedriver) para login con Google.
-
-    wait_fn: sustituye a input() cuando se llama desde la GUI.
+    Usa Playwright (con fallback a Chrome oficial) para login en Vinted.
+    Incluye flags anti-detección de automatización para permitir login de Google.
     """
     SESIONES_DIR.mkdir(parents=True, exist_ok=True)
     os.environ["SSL_CERT_FILE"] = certifi.where()
 
-    try:
-        import undetected_chromedriver as uc
-    except ImportError as exc:
-        hint = (
-            "pip install undetected-chromedriver setuptools"
-            if "distutils" in str(exc).lower()
-            else "pip install undetected-chromedriver"
+    from playwright.sync_api import sync_playwright
+
+    with sync_playwright() as p:
+        # Intentamos usar Chrome de Google si está instalado para evitar detección de bots
+        try:
+            print("Lanzando Chrome oficial con evasión de automatización...")
+            browser = p.chromium.launch(
+                headless=False,
+                channel="chrome",
+                args=["--disable-blink-features=AutomationControlled"],
+                ignore_default_args=["--enable-automation"]
+            )
+        except Exception:
+            print("Chrome oficial no disponible. Lanzando Chromium de Playwright con evasión...")
+            browser = p.chromium.launch(
+                headless=False,
+                args=["--disable-blink-features=AutomationControlled"],
+                ignore_default_args=["--enable-automation"]
+            )
+
+        context = browser.new_context(
+            viewport={"width": 1280, "height": 900},
+            user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
         )
-        raise RuntimeError(
-            f"No se pudo cargar undetected-chromedriver ({exc}). Ejecuta: {hint}"
-        ) from exc
+        page = context.new_page()
+        page.goto("https://www.vinted.es/login")
 
-    options = uc.ChromeOptions()
-    options.add_argument("--window-size=1280,900")
-    driver = uc.Chrome(options=options, use_subprocess=True)
-    driver.get("https://www.vinted.es/login")
+        if wait_fn:
+            wait_fn()
+        else:
+            print("\n→ Inicia sesión en Vinted y pulsa ENTER...")
+            input("  [ENTER cuando hayas iniciado sesión] ")
 
-    if wait_fn:
-        wait_fn()
-    else:
-        print("\n→ Inicia sesión en Vinted y pulsa ENTER...")
-        input("  [ENTER cuando hayas iniciado sesión] ")
+        # Guardar storage state (Playwright)
+        context.storage_state(path=str(VINTED_STATE_PATH))
 
-    selenium_cookies = driver.get_cookies()
-    storage_state = selenium_cookies_to_playwright(
-        selenium_cookies,
-        origins=read_local_storage(driver, "https://www.vinted.es"),
-    )
-    driver.quit()
+        # Guardar cookies en formato viejo pickle para retrocompatibilidad
+        cookies = context.cookies()
+        selenium_cookies = []
+        for c in cookies:
+            selenium_cookies.append({
+                "name": c["name"],
+                "value": c["value"],
+                "domain": c["domain"],
+                "path": c["path"],
+                "expiry": c.get("expires"),
+                "secure": c["secure"],
+                "httpOnly": c["httpOnly"],
+                "sameSite": c.get("sameSite", "Lax"),
+            })
+        
+        with open(VINTED_COOKIES_PATH, "wb") as f:
+            pickle.dump(selenium_cookies, f)
 
-    save_storage_state(VINTED_STATE_PATH, storage_state)
-    with open(VINTED_COOKIES_PATH, "wb") as f:
-        pickle.dump(selenium_cookies, f)
+        browser.close()
 
     print(f"  ✓ Sesión Vinted guardada en {VINTED_STATE_PATH}")

@@ -204,6 +204,7 @@ class WallapopBotGUI:
         row_a.pack(fill=tk.X, pady=4)
         ttk.Button(row_a, text="🔄 Actualizar", command=self.refresh_product_list).pack(side=tk.LEFT, padx=4)
         ttk.Button(row_a, text="🗑 Borrar", command=self.delete_selected).pack(side=tk.LEFT, padx=4)
+        ttk.Button(row_a, text="💥 Vaciar lote", command=self.clear_all_lote).pack(side=tk.LEFT, padx=4)
         ttk.Button(row_a, text="📋 Ver logs", command=self._open_logs_folder).pack(side=tk.LEFT, padx=4)
 
         self.plat_pub_var = tk.StringVar(value="ambas")
@@ -277,7 +278,7 @@ class WallapopBotGUI:
                     guardar_sesion_vinted(wait_fn=event.wait)
                 self.root.after(0, lambda: self._on_session_done(plataforma, None))
             except Exception as exc:
-                self.root.after(0, lambda: self._on_session_done(plataforma, exc))
+                self.root.after(0, lambda e=exc: self._on_session_done(plataforma, e))
 
         self._log(f"Abriendo navegador para {plataforma}…")
         threading.Thread(target=worker, daemon=True).start()
@@ -464,8 +465,16 @@ class WallapopBotGUI:
         os.makedirs(product_dir, exist_ok=True)
 
         for i, foto in enumerate(self.fotos_paths, 1):
-            ext = os.path.splitext(foto)[1].lower() or ".jpg"
-            shutil.copy2(foto, os.path.join(product_dir, f"{i:02d}{ext}"))
+            foto_path = Path(foto)
+            ext = foto_path.suffix.lower() or ".jpg"
+            if ext in (".heic", ".heif"):
+                from app.parser.csv_importer import convert_heic_to_jpg
+                dest_img = Path(product_dir) / f"{i:02d}.jpg"
+                exito = convert_heic_to_jpg(foto_path, dest_img)
+                if not exito:
+                    shutil.copy2(foto, os.path.join(product_dir, f"{i:02d}{ext}"))
+            else:
+                shutil.copy2(foto, os.path.join(product_dir, f"{i:02d}{ext}"))
 
         meta: dict = {}
         if self.plat_var.get() != "ambas":
@@ -531,6 +540,20 @@ class WallapopBotGUI:
         slug = self._lote_slugs[sel[0]]
         if messagebox.askyesno("Confirmar", f"¿Borrar '{slug}'?"):
             shutil.rmtree(os.path.join(LOTE_DIR, slug), ignore_errors=True)
+            self.refresh_product_list()
+
+    def clear_all_lote(self) -> None:
+        if not self._lote_slugs:
+            messagebox.showinfo("Aviso", "El lote ya está vacío.")
+            return
+        if messagebox.askyesno(
+            "Confirmar vaciado",
+            f"¿Estás seguro de que quieres borrar todos los ({len(self._lote_slugs)}) productos del lote?\n"
+            "Esta acción no se puede deshacer.",
+        ):
+            for slug in self._lote_slugs:
+                shutil.rmtree(os.path.join(LOTE_DIR, slug), ignore_errors=True)
+            self._log("Lote vaciado por completo.")
             self.refresh_product_list()
 
     # ── Publicar ───────────────────────────────────────────────────────────────
@@ -601,6 +624,7 @@ class WallapopBotGUI:
                     if "publicar_en" in item.meta
                     else plataformas
                 )
+                publicar_en = [p for p in publicar_en if p in plataformas]
                 precio = item.precio_manual if item.precio_manual is not None else 9.0
                 fotos = [str(f) for f in item.imagenes]
                 fallos_prod: list[str] = []
@@ -637,6 +661,7 @@ class WallapopBotGUI:
                             "tipo": tipo,
                             "marca": contenido.marca,
                             "fotos": fotos,
+                            "isbn": item.meta.get("isbn", ""),
                         }, log_fn=log)
                     except Exception as exc:
                         log(f"✗ Vinted: {exc}")

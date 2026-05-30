@@ -306,18 +306,15 @@ def _seleccionar_dropdown(
     for texto in textos:
         if _elegir_opcion_lista(page, texto):
             _human_sleep(500, 150)
-            val = _leer_input(page, field_id)
-            if val:
-                _log(f"#{field_id} OK: {val!r}", log_fn)
-                _cerrar_desplegables_vinted(page, log_fn)
-                return True
+            _log(f"#{field_id} OK (click exacto): {texto!r}", log_fn)
+            _cerrar_desplegables_vinted(page, log_fn)
+            return True
 
     if _elegir_primera_opcion(page, log_fn, field_id=field_id):
         _human_sleep(500, 150)
-        val = _leer_input(page, field_id)
-        if val:
-            _cerrar_desplegables_vinted(page, log_fn)
-            return True
+        _log(f"#{field_id} OK (primera opción)", log_fn)
+        _cerrar_desplegables_vinted(page, log_fn)
+        return True
 
     # Último recurso: teclado (ArrowDown + Enter)
     try:
@@ -325,11 +322,9 @@ def _seleccionar_dropdown(
         time.sleep(0.25)
         page.keyboard.press("Enter")
         _human_sleep(600, 150)
-        val = _leer_input(page, field_id)
-        if val:
-            _log(f"#{field_id} OK (teclado): {val!r}", log_fn)
-            _cerrar_desplegables_vinted(page, log_fn)
-            return True
+        _log(f"#{field_id} OK (teclado)", log_fn)
+        _cerrar_desplegables_vinted(page, log_fn)
+        return True
     except Exception:
         pass
 
@@ -352,11 +347,48 @@ def _marcas_candidatas(producto: dict) -> list[str]:
 def _seleccionar_marca(page, producto: dict, log_fn=None) -> bool:
     if not page.locator("#brand").is_visible(timeout=2_000):
         return True
-    if _leer_input(page, "brand"):
-        _log(f"Marca ya OK: {_leer_input(page, 'brand')!r}", log_fn)
+    
+    actual = _leer_input(page, "brand")
+    if actual:
+        _log(f"Marca ya OK: {actual!r}", log_fn)
         return True
+
+    _log("Seleccionando primera marca sugerida por Vinted...", log_fn)
+    try:
+        _abrir_desplegable(page, "brand", log_fn)
+        _human_sleep(1500, 500)
+
+        # Elegir primera opción disponible (las sugerencias salen al principio)
+        if _elegir_primera_opcion(page, log_fn, field_id="brand"):
+            _human_sleep(500, 150)
+            _cerrar_desplegables_vinted(page, log_fn)
+            return True
+    except Exception as e:
+        _log(f"Fallo al elegir primera marca sugerida: {e}", log_fn)
+
+    # Fallback: escribir candidatos
+    _log("Fallback: intentando escribir candidatos manuales...", log_fn)
+    candidatos = _marcas_candidatas(producto)
+    if candidatos:
+        _log(f"Escribiendo marca: {candidatos[0]}", log_fn)
+        try:
+            _cerrar_desplegables_vinted(page, log_fn)
+            inp = page.locator("#brand")
+            inp.click(force=True)
+            _human_sleep(1000, 300)
+            page.keyboard.type(candidatos[0], delay=100)
+            _human_sleep(2500, 600)
+            
+            ok = _seleccionar_dropdown(
+                page, "brand", candidatos[0], log_fn, candidatos=candidatos
+            )
+            if ok:
+                return True
+        except Exception as e:
+            _log(f"Error escribiendo marca: {e}", log_fn)
+            
     return _seleccionar_dropdown(
-        page, "brand", "", log_fn, candidatos=_marcas_candidatas(producto)
+        page, "brand", "", log_fn, candidatos=candidatos
     )
 
 
@@ -372,25 +404,57 @@ def _seleccionar_plataforma(page, producto: dict, log_fn=None) -> bool:
     candidatos: list[str] = []
     if producto.get("plataforma_vinted"):
         candidatos.append(str(producto["plataforma_vinted"]))
+    else:
+        # Extraer candidatos por slug o título si no viene definido
+        titulo = str(producto.get("titulo", "")).lower()
+        for plat, text in [
+            ("ps5", "PlayStation 5"), ("ps4", "PlayStation 4"), ("ps3", "PlayStation 3"),
+            ("ps2", "PlayStation 2"), ("ps1", "PlayStation 1"), ("psp", "PlayStation Portable"),
+            ("switch", "Nintendo Switch"), ("gamecube", "GameCube"), ("wii", "Wii"),
+            ("xbox 360", "Xbox 360"), ("xbox one", "Xbox One"), ("xbox", "Xbox")
+        ]:
+            if plat in titulo:
+                candidatos.append(text)
+                break
 
-    # Intentar buscar primero por texto en el desplegable
-    if candidatos:
-        ok = _seleccionar_dropdown(
-            page, "video_game_platform", candidatos[0], log_fn, candidatos=candidatos
-        )
-        if ok:
-            return True
+    if not candidatos:
+        candidatos.append("Xbox 360")  # Fallback estándar
 
-    # Solo si no hay candidatos claros → primera sugerencia del campo de búsqueda
-    _log("Plataforma sin candidatos claros — 1ª sugerencia", log_fn)
-    return _elegir_primera_opcion(page, log_fn, field_id="video_game_platform")
+    _log(f"Plataforma candidatos: {candidatos}", log_fn)
+    try:
+        _abrir_desplegable(page, "video_game_platform", log_fn)
+        _human_sleep(1200, 300)
+
+        # Localizar y rellenar el campo de búsqueda de plataforma
+        search_input = page.locator("#video_game_platform-search-input")
+        if search_input.count() > 0 and search_input.is_visible(timeout=2_000):
+            search_input.fill(candidatos[0])
+            _human_sleep(1500, 400)
+
+            # Hacer clic en el primer resultado (label de radio button)
+            # Los labels tienen data-testid="video_game_platform-radio-<id>"
+            first_option = page.locator('label[data-testid^="video_game_platform-radio-"]').first
+            if first_option.count() > 0:
+                first_option.click(force=True)
+                _log(f"Plataforma seleccionada (búsqueda): {candidatos[0]}", log_fn)
+                _human_sleep(800, 200)
+                _cerrar_desplegables_vinted(page, log_fn)
+                return True
+    except Exception as e:
+        _log(f"Error seleccionando plataforma mediante búsqueda: {e}", log_fn)
+
+    # Fallback supremo
+    _log("Fallback: intentando seleccionar primera opción disponible de plataforma...", log_fn)
+    if _elegir_primera_opcion(page, log_fn, field_id="video_game_platform"):
+        _cerrar_desplegables_vinted(page, log_fn)
+        return True
+
+    _cerrar_desplegables_vinted(page, log_fn)
+    return False
 
 
 def _seleccionar_clasificacion(page, producto: dict, log_fn=None) -> bool:
-    """Campo opcional: Clasificación de contenidos (video_game_ratings).
-    Si no se puede rellenar no es un error bloqueante.
-    """
-    # El campo puede llamarse video_game_rating o video_game_ratings
+    """Campo opcional: Clasificación de contenidos (video_game_ratings)."""
     field_id = None
     for fid in ("video_game_ratings", "video_game_rating"):
         if page.locator(f"#{fid}").is_visible(timeout=1_000):
@@ -400,10 +464,13 @@ def _seleccionar_clasificacion(page, producto: dict, log_fn=None) -> bool:
         return True
     if _leer_input(page, field_id):
         return True
-    pref = str(producto.get("pegi") or VINTED_RATING_DEFAULT)
+
+    # Priorizar PEGI 12 tal como pide el usuario, seguido por lo que venga en el producto
+    pref = str(producto.get("pegi") or "PEGI 12")
+    _log(f"Seleccionando clasificación de contenidos: {pref}...", log_fn)
     _seleccionar_dropdown(
         page, field_id, pref, log_fn,
-        candidatos=[pref, "PEGI 18", "AO – Solo adultos"],
+        candidatos=[pref, "PEGI 12", "PEGI 18", "AO – Solo adultos"],
     )
     return True  # siempre True: campo opcional
 
@@ -464,10 +531,24 @@ def _condicion_vinted_ok(page, objetivo: str = VINTED_CONDICION_PUBLICACION) -> 
 
 def _seleccionar_condicion(page, estado_vinted: str = "", log_fn=None) -> bool:
     """
-    Condición en Vinted: siempre «Bueno» (#condition).
-    No acepta otros valores aunque el campo ya tenga texto.
+    Condición en Vinted: dinámica según el producto, o «Bueno» por defecto.
     """
-    objetivo = VINTED_CONDICION_PUBLICACION
+    # Estandarizar y capitalizar la condición
+    estado_limpio = (estado_vinted or "").strip().lower()
+    if estado_limpio in ("nuevo", "nuevo con etiquetas"):
+        objetivo = "Nuevo con etiquetas"
+    elif estado_limpio in ("como_nuevo", "como nuevo", "nuevo sin etiquetas"):
+        objetivo = "Nuevo sin etiquetas"
+    elif estado_limpio in ("muy_bueno", "muy bueno"):
+        objetivo = "Muy bueno"
+    elif estado_limpio in ("bueno", "buen_estado", "buen estado"):
+        objetivo = "Bueno"
+    elif estado_limpio in ("aceptable", "satisfactorio"):
+        objetivo = "Satisfactorio"
+    else:
+        # Fallback a lo configurado o Bueno
+        objetivo = VINTED_CONDICION_PUBLICACION or "Bueno"
+
     if not page.locator("input#condition").is_visible(timeout=2_000):
         return True
 
@@ -523,22 +604,229 @@ def _seleccionar_condicion(page, estado_vinted: str = "", log_fn=None) -> bool:
 def _seleccionar_color(page, log_fn=None) -> bool:
     if not page.locator("#color").is_visible(timeout=1_500):
         return True
-    if _leer_input(page, "color"):
+    actual = _leer_input(page, "color")
+    if actual:
+        _log(f"Color ya OK: {actual!r}", log_fn)
         return True
+
+    _log("Seleccionando primer color sugerido...", log_fn)
+    try:
+        _abrir_desplegable(page, "color", log_fn)
+        _human_sleep(1200, 300)
+
+        # Elegir la primera opción disponible
+        if _elegir_primera_opcion(page, log_fn, field_id="color"):
+            _human_sleep(500, 150)
+            _cerrar_desplegables_vinted(page, log_fn)
+            return True
+    except Exception as e:
+        _log(f"Fallo al elegir primer color sugerido: {e}", log_fn)
+
+    # Fallback clásico
+    _log("Fallback: intentando seleccionar color Varios...", log_fn)
+    _cerrar_desplegables_vinted(page, log_fn)
     return _seleccionar_dropdown(
         page, "color", "Varios", log_fn,
         candidatos=["Varios", "Negro", "Gris", "Plateado", "Multicolor"],
     )
 
 
+def _seleccionar_categoria_recomendada(page, log_fn=None) -> bool:
+    try:
+        _log("Buscando categoría recomendada directamente en la página...", log_fn)
+        # Capa 1: Buscar sugerencia en la página principal directamente (sin abrir modal)
+        # Esperamos un momento para que Vinted genere las recomendaciones basadas en título/descripción
+        for _ in range(6): # Esperar hasta 3 segundos (6 * 500ms)
+            res = page.evaluate("""() => {
+                // Buscamos cualquier elemento con separador de ruta de categoría (e.g. ' > ' o ' › ')
+                // que sea clicable/interactivo
+                const candidates = [...document.querySelectorAll('button, [role="button"], span, div.web_ui__Chip__chip')]
+                    .filter(el => {
+                        const txt = (el.innerText || '').trim();
+                        return (txt.includes('>') || txt.includes('›')) && txt.length > 5 && txt.length < 120;
+                    });
+                if (candidates.length > 0) {
+                    candidates[0].click();
+                    return candidates[0].innerText || '(ok)';
+                }
+                
+                // Fallback de cabecera de sugerencias en la página principal
+                const headers = [...document.querySelectorAll('h3, h4, p, div, span')]
+                    .filter(el => {
+                        const txt = (el.innerText || '').trim().toLowerCase();
+                        return txt.includes('categor') && (txt.includes('suger') || txt.includes('recomend'));
+                    });
+                for (const h of headers) {
+                    const parent = h.parentElement;
+                    if (parent) {
+                        const btn = parent.querySelector('button, [role="button"], div.web_ui__Chip__chip');
+                        if (btn) {
+                            btn.click();
+                            return btn.innerText || '(ok)';
+                        }
+                    }
+                }
+                return null;
+            }""")
+            if res:
+                _log(f"Categoría recomendada seleccionada directamente en página: {res!r}", log_fn)
+                _human_sleep(1000, 300)
+                return True
+            time.sleep(0.5)
+
+        # Capa 2: Si no se encuentra en la página principal, abrimos el modal de categoría
+        _log("No se encontró sugerencia directa en página. Abriendo buscador de categoría...", log_fn)
+        _abrir_desplegable(page, "category", log_fn)
+        _human_sleep(1500, 500)
+
+        # Esperamos a que carguen las sugerencias en la modal (buscando cabeceras de sugerencia)
+        for _ in range(6): # Esperar hasta 3 segundos
+            res = page.evaluate("""() => {
+                // Buscamos cabeceras de sugerencias dentro de la modal/dialog de categoría
+                const modal = document.querySelector('.web_ui__Modal__modal, [role="dialog"]');
+                if (!modal) return null;
+                const headers = [...modal.querySelectorAll('h3, h4, div, span')]
+                    .filter(el => {
+                        const txt = (el.innerText || '').trim().toLowerCase();
+                        return txt.includes('suger') || txt.includes('recomend') || txt.includes('suggest');
+                    });
+                if (headers.length > 0) {
+                    const header = headers[0];
+                    let sibling = header.nextElementSibling;
+                    while (sibling) {
+                        const opt = sibling.querySelector('button, [role="button"], li, .web_ui__Cell__title') 
+                            || (sibling.matches('button, [role="button"], li, .web_ui__Cell__title') ? sibling : null);
+                        if (opt) {
+                            opt.click();
+                            return opt.innerText || '(ok)';
+                        }
+                        sibling = sibling.nextElementSibling;
+                    }
+                    const parent = header.parentElement;
+                    if (parent) {
+                        const opt = parent.querySelector('button, [role="button"], li, .web_ui__Cell__title');
+                        if (opt) {
+                            opt.click();
+                            return opt.innerText || '(ok)';
+                        }
+                    }
+                }
+                // Si aún no hay cabecera de sugerencias, buscamos si hay alguna opción que sea una ruta completa
+                const items = [...modal.querySelectorAll('.web_ui__Cell__title, [role="option"], li.web_ui__Item__item')];
+                const paths = items.filter(el => {
+                    const txt = (el.innerText || '');
+                    return (txt.includes('>') || txt.includes('›')) && txt.length < 100;
+                });
+                if (paths.length > 0) {
+                    paths[0].click();
+                    return paths[0].innerText || '(ok)';
+                }
+                return null;
+            }""")
+            if res:
+                _log(f"Categoría recomendada seleccionada en modal: {res!r}", log_fn)
+                _human_sleep(1000, 300)
+                _cerrar_desplegables_vinted(page, log_fn)
+                return True
+            time.sleep(0.5)
+
+        # Fallback de último recurso: elegir la primera opción que encontremos
+        _log("Ninguna sugerencia de categoría encontrada en modal. Eligiendo primera opción disponible...", log_fn)
+        if _elegir_primera_opcion(page, log_fn, field_id="category"):
+            _human_sleep(1000, 300)
+            _cerrar_desplegables_vinted(page, log_fn)
+            return True
+            
+    except Exception as e:
+        _log(f"Error al seleccionar categoría recomendada: {e}", log_fn)
+    return False
+
+
+def _seleccionar_categoria(page, producto: dict, log_fn=None) -> bool:
+    actual = _leer_input(page, "category")
+    if actual:
+        _log(f"Categoría ya seleccionada: {actual!r}", log_fn)
+        return True
+    return _seleccionar_categoria_recomendada(page, log_fn)
+
+
 def _seleccionar_talla(page, log_fn=None) -> bool:
     if not page.locator("#size").is_visible(timeout=2_000):
         return True
-    if _leer_input(page, "size"):
+
+    # Si ya tiene una de las tallas únicas seleccionadas, no la tocamos
+    actual = _leer_input(page, "size")
+    if actual and any(t.lower() in actual.lower() for t in TALLAS_VINTED):
+        _log(f"#size ya OK (es talla única): {actual!r}", log_fn)
         return True
+
+    _log("Forzando selección de 'Talla única'...", log_fn)
+    _abrir_desplegable(page, "size", log_fn)
+    _human_sleep(1200, 300)
+
+    # Intentar buscar "Talla única" o similares en la lista usando JS optimizado para cuadrículas (filter-grid)
+    res = page.evaluate("""() => {
+        const targets = ["talla única", "una talla", "talla unica", "única", "sin talla", "one size"];
+        
+        // 1. Intentar buscar por aria-label exacto en cualquier checkbox o elemento de la modal
+        const elements = [...document.querySelectorAll('[role="checkbox"], [role="option"], .filter-grid__option, li, div, span')];
+        for (const el of elements) {
+            const ariaLabel = (el.getAttribute('aria-label') || '').trim().toLowerCase();
+            if (targets.some(t => ariaLabel === t || ariaLabel.startsWith(t))) {
+                el.click();
+                return `aria-label match: ${el.getAttribute('aria-label')}`;
+            }
+        }
+        
+        // 2. Buscar por coincidencia de texto en elementos hoja específicos (spans, celdas) para evitar pulsar contenedores grandes
+        const leaves = [...document.querySelectorAll('span, div.web_ui__Cell__title, div.filter-grid__option, .web_ui__Text__text')]
+            .filter(el => {
+                const txt = (el.innerText || el.textContent || '').trim().toLowerCase();
+                return targets.some(t => txt === t || txt.startsWith(t));
+            });
+            
+        if (leaves.length > 0) {
+            const leaf = leaves[0];
+            // Encontrar el elemento interactivo más cercano
+            const clickable = leaf.closest('[role="checkbox"], [role="option"], .filter-grid__option, button') || leaf;
+            clickable.click();
+            return `leaf match: ${leaf.innerText}`;
+        }
+        return null;
+    }""")
+    if res:
+        _log(f"#size OK (JS click exacto): {res!r}", log_fn)
+        _cerrar_desplegables_vinted(page, log_fn)
+        return True
+
+    # Fallback Playwright en la lista visible
     for texto in TALLAS_VINTED:
-        if _seleccionar_dropdown(page, "size", texto, log_fn, candidatos=[texto]):
-            return True
+        for sel in (
+            "div[role='checkbox']",
+            ".filter-grid__option",
+            "motion\\:div[role='button']",
+            "li.web_ui__Item__item",
+            "[role='option']",
+            ".web_ui__Cell__title"
+        ):
+            try:
+                loc = page.locator(sel).filter(has_text=texto)
+                if loc.count() > 0:
+                    loc.first.click(force=True)
+                    _human_sleep(500, 100)
+                    _log(f"#size OK (playwright): {texto!r}", log_fn)
+                    _cerrar_desplegables_vinted(page, log_fn)
+                    return True
+            except Exception:
+                continue
+
+    # Fallback supremo: si no encuentra "Talla única", coge la primera que recomiende
+    _log("#size: Ninguna talla única coincide, seleccionando primera opción disponible...", log_fn)
+    if _elegir_primera_opcion(page, log_fn, field_id="size"):
+        _cerrar_desplegables_vinted(page, log_fn)
+        return True
+
+    _cerrar_desplegables_vinted(page, log_fn)
     return False
 
 
@@ -561,7 +849,10 @@ def _rellenar_precio(page, precio: float, log_fn=None) -> bool:
 def _seleccionar_paquete(page, log_fn=None) -> bool:
     # Seleccionar «Paquete pequeño» (tamaño 1)
     for sel in (
+        'label[data-testid="package_type_selector_1"]',       # Wrapper label
+        'label[for="package_type_selector_1"]',              # For attribute wrapper
         '[data-testid="package_type_selector_1--input"]',   # radio input directo
+        '#package_type_selector_1',                          # ID directo
         'input[aria-labelledby="package-size-1"]',           # por aria
         '[data-testid="1-package-size--cell"]',              # celda entera
         "#package-size-1",
@@ -573,11 +864,31 @@ def _seleccionar_paquete(page, log_fn=None) -> bool:
         try:
             loc.scroll_into_view_if_needed()
             loc.click(force=True, timeout=3_000)
-            _log("Paquete pequeño OK", log_fn)
+            _log(f"Paquete pequeño OK (selector: {sel})", log_fn)
             return True
         except Exception:
             continue
     _log("Paquete no seleccionado (no crítico)", log_fn)
+    return False
+
+
+def _rellenar_isbn(page, isbn: str, log_fn=None) -> bool:
+    if not isbn:
+        return True
+    
+    loc = page.locator("input#isbn, input[name='isbn'], [data-testid='isbn']").first
+    try:
+        if loc.count() > 0 and loc.is_visible(timeout=1_500):
+            _log(f"Rellenando ISBN: {isbn}...", log_fn)
+            loc.scroll_into_view_if_needed()
+            loc.click(force=True)
+            loc.fill("")
+            loc.fill(isbn)
+            page.keyboard.press("Tab")
+            _human_sleep(400, 150)
+            return True
+    except Exception as e:
+        _log(f"No se pudo rellenar el ISBN (no crítico): {e}", log_fn)
     return False
 
 
@@ -614,16 +925,14 @@ def subir_vinted(producto: dict, log_fn=None) -> bool:
             page.locator("#description").fill(str(producto["descripcion"]))
             _human_sleep(1200, 300)
 
-            cat_ok = _seleccionar_dropdown(
-                page, "category", str(producto["categoria_vinted"]), log_fn,
-                buscar_en_catalogo=True,
-            )
+            cat_ok = _seleccionar_categoria(page, producto, log_fn)
             marca_ok = _seleccionar_marca(page, producto, log_fn)
             plat_ok = _seleccionar_plataforma(page, producto, log_fn)
-            cond_ok = _seleccionar_condicion(page, log_fn=log_fn)
+            cond_ok = _seleccionar_condicion(page, producto.get("estado_vinted", ""), log_fn=log_fn)
             color_ok = _seleccionar_color(page, log_fn)
             talla_ok = _seleccionar_talla(page, log_fn)
             _seleccionar_clasificacion(page, producto, log_fn)
+            _rellenar_isbn(page, str(producto.get("isbn", "")), log_fn)
 
             precio_ok = _rellenar_precio(page, float(producto["precio"]), log_fn)
             paquete_ok = _seleccionar_paquete(page, log_fn)
@@ -645,7 +954,7 @@ def subir_vinted(producto: dict, log_fn=None) -> bool:
                 raise RuntimeError("Marca no seleccionada en Vinted")
             if not cond_ok:
                 raise RuntimeError(
-                    f"Condición no seleccionada en Vinted (esperado: {VINTED_CONDICION_PUBLICACION})"
+                    f"Condición no seleccionada en Vinted (esperado: {producto.get('estado_vinted') or VINTED_CONDICION_PUBLICACION})"
                 )
             if not precio_ok:
                 raise RuntimeError(f"Precio no aplicado ({producto.get('precio')}€)")

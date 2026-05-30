@@ -9,3 +9,14 @@ procesados/
 lote/
 logs/
 !logs/.gitkeep
+
+# Ignore large media assets in paravender directory
+paravender/**/*.HEIC
+paravender/**/*.heic
+paravender/**/*.HEIF
+paravender/**/*.heif
+paravender/**/*.jpg
+paravender/**/*.jpeg
+paravender/**/*.png
+paravender/**/*.gif
+paravender/**/*.DS_Store

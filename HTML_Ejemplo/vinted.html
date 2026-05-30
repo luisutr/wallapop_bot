@@ -1,0 +1,511 @@
+<div class="regular-container">
+    <div class="web_ui__Spacer__large web_ui__Spacer__horizontal"></div>
+    <h1 class="web_ui__Text__text web_ui__Text__heading web_ui__Text__left">Subir artículo</h1>
+    <div class="web_ui__Spacer__large web_ui__Spacer__horizontal"></div>
+    <div class="web_ui__Card__card web_ui__Card__overflowAuto">
+        <div data-testid="media-upload" id="photos"><input data-testid="add-photos-input" class="u-hidden"
+                accept="image/jpeg,image/gif,image/png,image/webp" multiple="" type="file" name="photos">
+            <div class="web_ui__Cell__cell web_ui__Cell__wide" role="presentation">
+                <div class="web_ui__Cell__content">
+                    <div class="web_ui__Cell__body">
+                        <div class="dropzone dropzone-border-default" data-testid="dropzone">
+                            <div data-testid="dropzone-overlay"
+                                class="dropzone__overlay dropzone__overlay-background-color-default">
+                                <div class="dropzone__overlay-description">
+                                    <h1
+                                        class="web_ui__Text__text web_ui__Text__heading web_ui__Text__left web_ui__Text__muted">
+                                        <span>Arrastra los archivos aquí</span></h1>
+                                </div>
+                            </div>
+                            <div class="media-select__grid" data-testid="media-upload-grid">
+                                <div class="photo-box">
+                                    <div role="button" tabindex="0" aria-disabled="false"
+                                        aria-roledescription="sortable" aria-describedby="DndDescribedBy-2"
+                                        class="u-cursor-grab">
+                                        <div class="photo-box__image-container" role="button" tabindex="0">
+                                            <div data-testid="image-wrapper-0" style="transform: rotate(0deg);">
+                                                <div
+                                                    class="web_ui__Image__image web_ui__Image__cover web_ui__Image__square web_ui__Image__rounded web_ui__Image__scaled web_ui__Image__ratio">
+                                                    <img alt="Foto subida 1 de 1 Para reordenar las fotos, pulsa la barra espaciadora."
+                                                        class="web_ui__Image__content"
+                                                        src="https://images1.vinted.net/t/05_017ea_dLghLszg6d9qNrCPg5qWb8cy/f800/1780153436.webp?s=54fbb9f5988e4f3ff382b913740aa45e6a74922e">
+                                                </div>
+                                            </div>
+                                            <div class="photo-box__main-badge">
+                                                <div class="web_ui__Badge__badge web_ui__Badge__default web_ui__Badge__filled"
+                                                    data-testid="media-select-main-badge-0">
+                                                    <div class="web_ui__Badge__content"
+                                                        data-testid="media-select-main-badge-0--content">Principal</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="photo-box__delete-button"><button type="button"
+                                            aria-label="Eliminar la foto seleccionada"
+                                            class="web_ui__Button__button web_ui__Button__filled web_ui__Button__small web_ui__Button__primary web_ui__Button__inline web_ui__Button__inverse web_ui__Button__truncated web_ui__Button__icon-left web_ui__Button__without-text"
+                                            data-testid="media-select-grid-delete-button-0"><span
+                                                class="web_ui__Button__content"><span class="web_ui__Button__icon"><span
+                                                        class="web_ui__Icon__icon web_ui__Icon__greyscale-level-1"
+                                                        data-testid="x" style="width: 16px;"><svg fill="none"
+                                                            viewBox="0 0 16 16" width="16" height="16"
+                                                            aria-hidden="true">
+                                                            <path fill="currentColor" fill-rule="evenodd"
+                                                                d="M14.03 3.03a.75.75 0 0 0-1.06-1.06L8 6.94 3.03 1.97a.75.75 0 0 0-1.06 1.06L6.94 8l-4.97 4.97a.75.75 0 1 0 1.06 1.06L8 9.06l4.97 4.97a.75.75 0 1 0 1.06-1.06L9.06 8z"
+                                                                clip-rule="evenodd"></path>
+                                                        </svg></span></span></span></button></div>
+                                    <div class="photo-box__action-button"><button type="button"
+                                            aria-label="Rotate photo clockwise"
+                                            class="web_ui__Button__button web_ui__Button__filled web_ui__Button__small web_ui__Button__primary web_ui__Button__inline web_ui__Button__inverse web_ui__Button__truncated web_ui__Button__icon-left web_ui__Button__without-text"
+                                            data-testid="media-select-grid-rotate-button-0"><span
+                                                class="web_ui__Button__content"><span class="web_ui__Button__icon"><span
+                                                        class="web_ui__Icon__icon web_ui__Icon__greyscale-level-1"
+                                                        data-testid="rotate-right" style="width: 16px;"><svg fill="none"
+                                                            viewBox="0 0 16 16" width="16" height="16"
+                                                            aria-hidden="true">
+                                                            <path fill="currentColor"
+                                                                d="M13.146 2.854a.5.5 0 0 1 .854.353V6a.5.5 0 0 1-.5.5h-2.793a.5.5 0 0 1-.353-.854l.823-.823A4.48 4.48 0 0 0 8 3.5 4.505 4.505 0 0 0 3.5 8 4.5 4.5 0 0 0 8 12.5a4.48 4.48 0 0 0 4.005-2.488c.15-.298.442-.512.776-.512.518 0 .896.491.683.962A6 6 0 0 1 8 14a6 6 0 0 1-4.924-2.571A5.96 5.96 0 0 1 2 8c0-3.309 2.691-6 6-6a5.97 5.97 0 0 1 4.235 1.765z">
+                                                            </path>
+                                                        </svg></span></span></span></button></div>
+                                </div><span aria-live="assertive" class="u-visually-hidden"></span>
+                                <div data-testid="add-photos-icon-button" class="media-select__input-box">
+                                    <div class="media-select__input-box-content"><button type="button"
+                                            aria-label="Añadir fotos"
+                                            class="web_ui__Button__button web_ui__Button__outlined web_ui__Button__default web_ui__Button__primary web_ui__Button__inline web_ui__Button__truncated web_ui__Button__icon-left web_ui__Button__without-text"><span
+                                                class="web_ui__Button__content"><span class="web_ui__Button__icon"><span
+                                                        class="web_ui__Icon__icon web_ui__Icon__primary-default"
+                                                        data-testid="plus" style="width: 24px;"><svg fill="none"
+                                                            viewBox="0 0 24 24" width="24" height="24"
+                                                            aria-hidden="true">
+                                                            <path fill="currentColor"
+                                                                d="M11.25 19.25a.75.75 0 0 0 1.5 0v-6.5h6.5a.75.75 0 0 0 0-1.5h-6.5v-6.5a.75.75 0 0 0-1.5 0v6.5h-6.5a.75.75 0 0 0 0 1.5h6.5z">
+                                                            </path>
+                                                        </svg></span></span></span></button></div>
+                                </div>
+                            </div>
+                            <div id="DndDescribedBy-2" style="display: none;"></div>
+                            <div id="DndLiveRegion-2" role="status" aria-live="assertive" aria-atomic="true"
+                                style="position: fixed; width: 1px; height: 1px; margin: -1px; border: 0px; padding: 0px; overflow: hidden; clip: rect(0px, 0px, 0px, 0px); clip-path: inset(100%); white-space: nowrap;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="web_ui__Spacer__x-large web_ui__Spacer__horizontal"></div>
+    <div class="web_ui__Card__card web_ui__Card__overflowAuto"><label for="title"
+            class="web_ui__Input__input web_ui__Input__wide" data-testid="title">
+            <div class="web_ui__Input__title" data-testid="title--title">Título</div>
+            <div class="web_ui__Input__content"><input class="web_ui__Input__value" id="title"
+                    placeholder="Indica claramente qué vendes" data-testid="title--input" type="text"
+                    value="figura spiderman" name="title"></div>
+        </label>
+        <div class="web_ui__Divider__divider"></div><label for="description"
+            class="web_ui__Input__input web_ui__Input__wide" data-testid="description">
+            <div class="web_ui__Input__title" data-testid="description--title">Descripción</div>
+            <div class="web_ui__Input__content"><template shadowrootmode="closed"><lt-mirror contenteditable="false"
+                        class="lt--mac-os lt-mirror--grid-item" style="display: none;"><template
+                            shadowrootmode="closed"><lt-highlighter contenteditable="false" class="lt--mac-os"
+                                style="display: none;"><lt-div spellcheck="false" class="lt-highlighter__wrapper"
+                                    style="width: 455px !important; transform: none !important; transform-origin: 227.5px 57.5px !important; zoom: 1 !important; height: 114px !important;"><lt-div
+                                        class="lt-highlighter__scroll-element"
+                                        style="top: 0px !important; left: 0px !important; width: 455px !important; height: 114px !important;"></lt-div></lt-div></lt-highlighter>
+                            <slot
+                                style="color-scheme: inherit; forced-color-adjust: inherit; math-depth: inherit; position: inherit; position-anchor: inherit; text-size-adjust: inherit; appearance: inherit; color: inherit; font: inherit; font-palette: inherit; font-synthesis: inherit; position-area: inherit; text-orientation: inherit; text-rendering: inherit; text-spacing-trim: inherit; -webkit-font-smoothing: inherit; -webkit-locale: inherit; -webkit-text-orientation: inherit; -webkit-writing-mode: inherit; writing-mode: inherit; zoom: inherit; accent-color: inherit; place-content: inherit; place-items: inherit; place-self: inherit; alignment-baseline: inherit; anchor-name: inherit; anchor-scope: inherit; animation-composition: inherit; animation: inherit; animation-trigger: inherit; app-region: inherit; aspect-ratio: inherit; backdrop-filter: inherit; backface-visibility: inherit; background: inherit; background-blend-mode: inherit; baseline-shift: inherit; baseline-source: inherit; block-size: inherit; border-block: inherit; border: inherit; border-radius: inherit; border-collapse: inherit; border-end-end-radius: inherit; border-end-start-radius: inherit; border-inline: inherit; border-shape: inherit; border-start-end-radius: inherit; border-start-start-radius: inherit; inset: inherit; box-decoration-break: inherit; box-shadow: inherit; box-sizing: inherit; break-after: inherit; break-before: inherit; break-inside: inherit; buffered-rendering: inherit; caption-side: inherit; caret-animation: inherit; caret-color: inherit; caret-shape: inherit; clear: inherit; clip: inherit; clip-path: inherit; clip-rule: inherit; color-interpolation: inherit; color-interpolation-filters: inherit; color-rendering: inherit; columns: inherit; column-fill: inherit; gap: inherit; column-rule: inherit; column-span: inherit; contain: inherit; contain-intrinsic-block-size: inherit; contain-intrinsic-size: inherit; contain-intrinsic-inline-size: inherit; container: inherit; content: inherit; content-visibility: inherit; corner-shape: inherit; corner-block-end-shape: inherit; corner-block-start-shape: inherit; counter-increment: inherit; counter-reset: inherit; counter-set: inherit; cursor: inherit; cx: inherit; cy: inherit; d: inherit; dominant-baseline: inherit; dynamic-range-limit: inherit; empty-cells: inherit; field-sizing: inherit; fill: inherit; fill-opacity: inherit; fill-rule: inherit; filter: inherit; flex: inherit; flex-flow: inherit; float: inherit; flood-color: inherit; flood-opacity: inherit; grid: inherit; grid-area: inherit; height: inherit; hyphenate-character: inherit; hyphenate-limit-chars: inherit; hyphens: inherit; image-orientation: inherit; image-rendering: inherit; initial-letter: inherit; inline-size: inherit; inset-block: inherit; inset-inline: inherit; interactivity: inherit; interest-delay: inherit; interpolate-size: inherit; isolation: inherit; letter-spacing: inherit; lighting-color: inherit; line-break: inherit; list-style: inherit; margin-block: inherit; margin: inherit; margin-inline: inherit; marker: inherit; mask: inherit; mask-type: inherit; math-shift: inherit; math-style: inherit; max-block-size: inherit; max-height: inherit; max-inline-size: inherit; max-width: inherit; min-block-size: inherit; min-height: inherit; min-inline-size: inherit; min-width: inherit; mix-blend-mode: inherit; object-fit: inherit; object-position: inherit; object-view-box: inherit; offset: inherit; opacity: inherit; order: inherit; orphans: inherit; outline: inherit; outline-offset: inherit; overflow-anchor: inherit; overflow-block: inherit; overflow-clip-margin: inherit; overflow-inline: inherit; overflow-wrap: inherit; overflow: inherit; overlay: inherit; overscroll-behavior-block: inherit; overscroll-behavior-inline: inherit; overscroll-behavior: inherit; padding-block: inherit; padding: inherit; padding-inline: inherit; page: inherit; page-orientation: inherit; paint-order: inherit; perspective: inherit; perspective-origin: inherit; pointer-events: inherit; position-try: inherit; position-visibility: inherit; print-color-adjust: inherit; quotes: inherit; r: inherit; reading-flow: inherit; reading-order: inherit; resize: inherit; rotate: inherit; ruby-align: inherit; ruby-position: inherit; rx: inherit; ry: inherit; scale: inherit; scroll-behavior: inherit; scroll-initial-target: inherit; scroll-margin-block: inherit; scroll-margin: inherit; scroll-margin-inline: inherit; scroll-marker-group: inherit; scroll-padding-block: inherit; scroll-padding: inherit; scroll-padding-inline: inherit; scroll-snap-align: inherit; scroll-snap-stop: inherit; scroll-snap-type: inherit; scroll-target-group: inherit; scroll-timeline: inherit; scrollbar-color: inherit; scrollbar-gutter: inherit; scrollbar-width: inherit; shape-image-threshold: inherit; shape-margin: inherit; shape-outside: inherit; shape-rendering: inherit; size: inherit; speak: inherit; stop-color: inherit; stop-opacity: inherit; stroke: inherit; stroke-dasharray: inherit; stroke-dashoffset: inherit; stroke-linecap: inherit; stroke-linejoin: inherit; stroke-miterlimit: inherit; stroke-opacity: inherit; stroke-width: inherit; tab-size: inherit; table-layout: inherit; text-align: inherit; text-align-last: inherit; text-anchor: inherit; text-autospace: inherit; text-box: inherit; text-combine-upright: inherit; text-decoration: inherit; text-decoration-skip-ink: inherit; text-emphasis: inherit; text-emphasis-position: inherit; text-indent: inherit; text-justify: inherit; text-overflow: inherit; text-shadow: inherit; text-transform: inherit; text-underline-offset: inherit; text-underline-position: inherit; text-wrap: inherit; timeline-scope: inherit; timeline-trigger: inherit; touch-action: inherit; transform: inherit; transform-box: inherit; transform-origin: inherit; transform-style: inherit; transition: inherit; translate: inherit; trigger-scope: inherit; user-select: inherit; vector-effect: inherit; vertical-align: inherit; view-timeline: inherit; view-transition-class: inherit; view-transition-group: inherit; view-transition-name: inherit; view-transition-scope: inherit; visibility: inherit; border-spacing: inherit; -webkit-box-align: inherit; -webkit-box-decoration-break: inherit; -webkit-box-direction: inherit; -webkit-box-flex: inherit; -webkit-box-ordinal-group: inherit; -webkit-box-orient: inherit; -webkit-box-pack: inherit; -webkit-box-reflect: inherit; -webkit-line-break: inherit; -webkit-line-clamp: inherit; -webkit-mask-box-image: inherit; -webkit-rtl-ordering: inherit; -webkit-ruby-position: inherit; -webkit-tap-highlight-color: inherit; -webkit-text-combine: inherit; -webkit-text-decorations-in-effect: inherit; -webkit-text-fill-color: inherit; -webkit-text-security: inherit; -webkit-text-stroke: inherit; -webkit-user-drag: inherit; white-space-collapse: inherit; widows: inherit; width: inherit; will-change: inherit; word-break: inherit; word-spacing: inherit; x: inherit; y: inherit; z-index: inherit; display: contents;">
+                            </slot>
+                            <link href="chrome-extension://oldceeleldhonbafppcapldpdifcinji/content/styles/shadow.css"
+                                rel="stylesheet">
+                        </template><lt-div spellcheck="false" class="lt-mirror__wrapper notranslate"
+                            data-lt-scroll-top="0" data-lt-scroll-left="0" data-lt-scroll-top-scaled="0"
+                            data-lt-scroll-left-scaled="0" data-lt-scroll-top-scaled-and-zoomed="0"
+                            data-lt-scroll-left-scaled-and-zoomed="0"
+                            style="border-radius: 0px !important; border-width: 0px 0px 1px !important; border-style: none none solid !important; direction: ltr !important; font: 375 16px / 22px V_INTER, &quot;V_INTER Fallback&quot;, &quot;Helvetica Neue&quot;, Helvetica-Neue, Arial, sans-serif !important; font-synthesis: weight style small-caps !important; hyphens: manual !important; letter-spacing: normal !important; line-break: auto !important; margin: 0px !important; padding: 0px 16px 4px 0px !important; text-align: start !important; text-decoration: none !important; text-indent: 0px !important; text-rendering: auto !important; text-transform: none !important; transform: none !important; transform-origin: 227.5px 57.5px !important; unicode-bidi: normal !important; white-space: pre-wrap !important; word-spacing: 0px !important; overflow-wrap: break-word !important; writing-mode: horizontal-tb !important; zoom: 1 !important; -webkit-locale: &quot;es&quot; !important; -webkit-rtl-ordering: logical !important; width: 439px !important; height: 110px !important;"><lt-div
+                                class="lt-mirror__canvas"
+                                style="margin-top: 0px !important; margin-left: 0px !important; width: 439px !important; height: 110px !important; align-content: normal !important;"><lt-span>figura
+                                    malo spiderman</lt-span></lt-div></lt-div></lt-mirror>
+                    <slot
+                        style="color-scheme: inherit; forced-color-adjust: inherit; math-depth: inherit; position: inherit; position-anchor: inherit; text-size-adjust: inherit; appearance: inherit; color: inherit; font: inherit; font-palette: inherit; font-synthesis: inherit; position-area: inherit; text-orientation: inherit; text-rendering: inherit; text-spacing-trim: inherit; -webkit-font-smoothing: inherit; -webkit-locale: inherit; -webkit-text-orientation: inherit; -webkit-writing-mode: inherit; writing-mode: inherit; zoom: inherit; accent-color: inherit; place-content: inherit; place-items: inherit; place-self: inherit; alignment-baseline: inherit; anchor-name: inherit; anchor-scope: inherit; animation-composition: inherit; animation: inherit; animation-trigger: inherit; app-region: inherit; aspect-ratio: inherit; backdrop-filter: inherit; backface-visibility: inherit; background: inherit; background-blend-mode: inherit; baseline-shift: inherit; baseline-source: inherit; block-size: inherit; border-block: inherit; border: inherit; border-radius: inherit; border-collapse: inherit; border-end-end-radius: inherit; border-end-start-radius: inherit; border-inline: inherit; border-shape: inherit; border-start-end-radius: inherit; border-start-start-radius: inherit; inset: inherit; box-decoration-break: inherit; box-shadow: inherit; box-sizing: inherit; break-after: inherit; break-before: inherit; break-inside: inherit; buffered-rendering: inherit; caption-side: inherit; caret-animation: inherit; caret-color: inherit; caret-shape: inherit; clear: inherit; clip: inherit; clip-path: inherit; clip-rule: inherit; color-interpolation: inherit; color-interpolation-filters: inherit; color-rendering: inherit; columns: inherit; column-fill: inherit; gap: inherit; column-rule: inherit; column-span: inherit; contain: inherit; contain-intrinsic-block-size: inherit; contain-intrinsic-size: inherit; contain-intrinsic-inline-size: inherit; container: inherit; content: inherit; content-visibility: inherit; corner-shape: inherit; corner-block-end-shape: inherit; corner-block-start-shape: inherit; counter-increment: inherit; counter-reset: inherit; counter-set: inherit; cursor: inherit; cx: inherit; cy: inherit; d: inherit; dominant-baseline: inherit; dynamic-range-limit: inherit; empty-cells: inherit; field-sizing: inherit; fill: inherit; fill-opacity: inherit; fill-rule: inherit; filter: inherit; flex: inherit; flex-flow: inherit; float: inherit; flood-color: inherit; flood-opacity: inherit; grid: inherit; grid-area: inherit; height: inherit; hyphenate-character: inherit; hyphenate-limit-chars: inherit; hyphens: inherit; image-orientation: inherit; image-rendering: inherit; initial-letter: inherit; inline-size: inherit; inset-block: inherit; inset-inline: inherit; interactivity: inherit; interest-delay: inherit; interpolate-size: inherit; isolation: inherit; letter-spacing: inherit; lighting-color: inherit; line-break: inherit; list-style: inherit; margin-block: inherit; margin: inherit; margin-inline: inherit; marker: inherit; mask: inherit; mask-type: inherit; math-shift: inherit; math-style: inherit; max-block-size: inherit; max-height: inherit; max-inline-size: inherit; max-width: inherit; min-block-size: inherit; min-height: inherit; min-inline-size: inherit; min-width: inherit; mix-blend-mode: inherit; object-fit: inherit; object-position: inherit; object-view-box: inherit; offset: inherit; opacity: inherit; order: inherit; orphans: inherit; outline: inherit; outline-offset: inherit; overflow-anchor: inherit; overflow-block: inherit; overflow-clip-margin: inherit; overflow-inline: inherit; overflow-wrap: inherit; overflow: inherit; overlay: inherit; overscroll-behavior-block: inherit; overscroll-behavior-inline: inherit; overscroll-behavior: inherit; padding-block: inherit; padding: inherit; padding-inline: inherit; page: inherit; page-orientation: inherit; paint-order: inherit; perspective: inherit; perspective-origin: inherit; pointer-events: inherit; position-try: inherit; position-visibility: inherit; print-color-adjust: inherit; quotes: inherit; r: inherit; reading-flow: inherit; reading-order: inherit; resize: inherit; rotate: inherit; ruby-align: inherit; ruby-position: inherit; rx: inherit; ry: inherit; scale: inherit; scroll-behavior: inherit; scroll-initial-target: inherit; scroll-margin-block: inherit; scroll-margin: inherit; scroll-margin-inline: inherit; scroll-marker-group: inherit; scroll-padding-block: inherit; scroll-padding: inherit; scroll-padding-inline: inherit; scroll-snap-align: inherit; scroll-snap-stop: inherit; scroll-snap-type: inherit; scroll-target-group: inherit; scroll-timeline: inherit; scrollbar-color: inherit; scrollbar-gutter: inherit; scrollbar-width: inherit; shape-image-threshold: inherit; shape-margin: inherit; shape-outside: inherit; shape-rendering: inherit; size: inherit; speak: inherit; stop-color: inherit; stop-opacity: inherit; stroke: inherit; stroke-dasharray: inherit; stroke-dashoffset: inherit; stroke-linecap: inherit; stroke-linejoin: inherit; stroke-miterlimit: inherit; stroke-opacity: inherit; stroke-width: inherit; tab-size: inherit; table-layout: inherit; text-align: inherit; text-align-last: inherit; text-anchor: inherit; text-autospace: inherit; text-box: inherit; text-combine-upright: inherit; text-decoration: inherit; text-decoration-skip-ink: inherit; text-emphasis: inherit; text-emphasis-position: inherit; text-indent: inherit; text-justify: inherit; text-overflow: inherit; text-shadow: inherit; text-transform: inherit; text-underline-offset: inherit; text-underline-position: inherit; text-wrap: inherit; timeline-scope: inherit; timeline-trigger: inherit; touch-action: inherit; transform: inherit; transform-box: inherit; transform-origin: inherit; transform-style: inherit; transition: inherit; translate: inherit; trigger-scope: inherit; user-select: inherit; vector-effect: inherit; vertical-align: inherit; view-timeline: inherit; view-transition-class: inherit; view-transition-group: inherit; view-transition-name: inherit; view-transition-scope: inherit; visibility: inherit; border-spacing: inherit; -webkit-box-align: inherit; -webkit-box-decoration-break: inherit; -webkit-box-direction: inherit; -webkit-box-flex: inherit; -webkit-box-ordinal-group: inherit; -webkit-box-orient: inherit; -webkit-box-pack: inherit; -webkit-box-reflect: inherit; -webkit-line-break: inherit; -webkit-line-clamp: inherit; -webkit-mask-box-image: inherit; -webkit-rtl-ordering: inherit; -webkit-ruby-position: inherit; -webkit-tap-highlight-color: inherit; -webkit-text-combine: inherit; -webkit-text-decorations-in-effect: inherit; -webkit-text-fill-color: inherit; -webkit-text-security: inherit; -webkit-text-stroke: inherit; -webkit-user-drag: inherit; white-space-collapse: inherit; widows: inherit; width: inherit; will-change: inherit; word-break: inherit; word-spacing: inherit; x: inherit; y: inherit; z-index: inherit; display: contents;">
+                    </slot>
+                    <link href="chrome-extension://oldceeleldhonbafppcapldpdifcinji/content/styles/shadow.css"
+                        rel="stylesheet">
+                </template><textarea class="web_ui__Input__value" name="description" id="description"
+                    placeholder="Añade información detallada" data-testid="description--input"
+                    style="height: 115px !important;" data-lt-tmp-id="lt-771376" spellcheck="false"
+                    data-gramm="false">figura malo spiderman</textarea></div>
+        </label>
+    </div>
+    <div class="web_ui__Spacer__x-large web_ui__Spacer__horizontal"></div>
+    <div class="web_ui__Card__card web_ui__Card__overflowVisible">
+        <ul
+            class="web_ui__List__width-parent web_ui__List__height-parent web_ui__List__gap-regular web_ui__List__list web_ui__List__direction-column">
+            <li class="web_ui__Item__item web_ui__Item__with-divider">
+                <div class="c-input c-input--wide c-input--transparent"><label for="category"
+                        class="c-input__title">Categoría</label>
+                    <div class="c-input__content"><input data-testid="catalog-select-dropdown-input" autocomplete="off"
+                            class="c-input__value c-input__value--with-suffix u-cursor-pointer" id="category"
+                            readonly="" placeholder="Elige una categoría" value="Figuras articuladas" name="category">
+                        <div class="c-input__icon" role="button"><span
+                                class="web_ui__Icon__icon web_ui__Icon__greyscale-level-2"
+                                data-testid="catalog-select-dropdown-chevron-down" style="width: 16px;"><svg fill="none"
+                                    viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+                                    <path fill="currentColor"
+                                        d="M2.47 4.47a.75.75 0 0 1 1.06 0L8 8.94l4.47-4.47a.75.75 0 1 1 1.06 1.06l-5 5a.75.75 0 0 1-1.06 0l-5-5a.75.75 0 0 1 0-1.06">
+                                    </path>
+                                </svg></span></div>
+                    </div>
+                    <div class="c-input__note"></div>
+                </div>
+            </li>
+            <div>
+                <li class="web_ui__Item__item web_ui__Item__with-divider">
+                    <div class="c-input c-input--wide c-input--transparent"><label for="brand"
+                            class="c-input__title">Marca</label>
+                        <div class="c-input__content"><input data-testid="brand-select-dropdown-input"
+                                autocomplete="off" class="c-input__value c-input__value--with-suffix u-cursor-pointer"
+                                id="brand" readonly="" placeholder="Selecciona una marca" value="Marvel" name="brand">
+                            <div class="c-input__icon" role="button"><span
+                                    class="web_ui__Icon__icon web_ui__Icon__greyscale-level-2"
+                                    data-testid="brand-select-dropdown-chevron-down" style="width: 16px;"><svg
+                                        fill="none" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+                                        <path fill="currentColor"
+                                            d="M2.47 4.47a.75.75 0 0 1 1.06 0L8 8.94l4.47-4.47a.75.75 0 1 1 1.06 1.06l-5 5a.75.75 0 0 1-1.06 0l-5-5a.75.75 0 0 1 0-1.06">
+                                        </path>
+                                    </svg></span></div>
+                        </div>
+                        <div class="c-input__note"></div>
+                    </div>
+                </li>
+                <li class="web_ui__Item__item web_ui__Item__with-divider">
+                    <div class="c-input c-input--wide c-input--transparent"><label for="size"
+                            class="c-input__title">Talla</label>
+                        <div class="c-input__content"><input data-testid="category-size-single-grid-input"
+                                autocomplete="off" class="c-input__value c-input__value--with-suffix u-cursor-pointer"
+                                id="size" readonly="" placeholder="Selecciona una talla" value="Talla única"
+                                name="size">
+                            <div class="c-input__icon" role="button"><span
+                                    class="web_ui__Icon__icon web_ui__Icon__greyscale-level-2"
+                                    data-testid="category-size-single-grid-chevron-down" style="width: 16px;"><svg
+                                        fill="none" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+                                        <path fill="currentColor"
+                                            d="M2.47 4.47a.75.75 0 0 1 1.06 0L8 8.94l4.47-4.47a.75.75 0 1 1 1.06 1.06l-5 5a.75.75 0 0 1-1.06 0l-5-5a.75.75 0 0 1 0-1.06">
+                                        </path>
+                                    </svg></span></div>
+                        </div>
+                    </div>
+                </li>
+                <li class="web_ui__Item__item web_ui__Item__with-divider">
+                    <div class="c-input c-input--wide c-input--transparent"><label for="condition"
+                            class="c-input__title">Estado</label>
+                        <div class="c-input__content"><input data-testid="category-condition-single-list-input"
+                                autocomplete="off" class="c-input__value c-input__value--with-suffix u-cursor-pointer"
+                                id="condition" readonly="" placeholder="Selecciona un estado" value="Bueno"
+                                name="condition">
+                            <div class="c-input__icon" role="button"><span
+                                    class="web_ui__Icon__icon web_ui__Icon__greyscale-level-2"
+                                    data-testid="category-condition-single-list-chevron-down" style="width: 16px;"><svg
+                                        fill="none" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+                                        <path fill="currentColor"
+                                            d="M2.47 4.47a.75.75 0 0 1 1.06 0L8 8.94l4.47-4.47a.75.75 0 1 1 1.06 1.06l-5 5a.75.75 0 0 1-1.06 0l-5-5a.75.75 0 0 1 0-1.06">
+                                        </path>
+                                    </svg></span></div>
+                        </div>
+                    </div>
+                </li>
+                <li class="web_ui__Item__item web_ui__Item__with-divider">
+                    <div class="c-input c-input--wide c-input--transparent"><label for="color"
+                            class="c-input__title">Color</label>
+                        <div class="c-input__content"><input data-testid="color-select-dropdown-input"
+                                autocomplete="off" class="c-input__value c-input__value--with-suffix u-cursor-pointer"
+                                id="color" readonly="" placeholder="Selecciona hasta 2 colores" value="Marrón"
+                                name="color">
+                            <div class="c-input__icon" role="button"><span
+                                    class="web_ui__Icon__icon web_ui__Icon__greyscale-level-2"
+                                    data-testid="color-select-dropdown-chevron-down" style="width: 16px;"><svg
+                                        fill="none" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+                                        <path fill="currentColor"
+                                            d="M2.47 4.47a.75.75 0 0 1 1.06 0L8 8.94l4.47-4.47a.75.75 0 1 1 1.06 1.06l-5 5a.75.75 0 0 1-1.06 0l-5-5a.75.75 0 0 1 0-1.06">
+                                        </path>
+                                    </svg></span></div>
+                        </div>
+                    </div>
+                </li>
+                <li class="web_ui__Item__item web_ui__Item__with-divider">
+                    <div class="c-input c-input--wide c-input--transparent"><label for="material"
+                            class="c-input__title">Material (recomendado)</label>
+                        <div class="c-input__content"><input data-testid="category-material-multi-list-input"
+                                autocomplete="off" class="c-input__value c-input__value--with-suffix u-cursor-pointer"
+                                id="material" readonly="" placeholder="Selecciona el material" value="" name="material">
+                            <div class="c-input__icon" role="button"><span
+                                    class="web_ui__Icon__icon web_ui__Icon__greyscale-level-2"
+                                    data-testid="category-material-multi-list-chevron-down" style="width: 16px;"><svg
+                                        fill="none" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+                                        <path fill="currentColor"
+                                            d="M2.47 4.47a.75.75 0 0 1 1.06 0L8 8.94l4.47-4.47a.75.75 0 1 1 1.06 1.06l-5 5a.75.75 0 0 1-1.06 0l-5-5a.75.75 0 0 1 0-1.06">
+                                        </path>
+                                    </svg></span></div>
+                        </div>
+                    </div>
+                </li>
+            </div>
+        </ul>
+    </div>
+    <div class="web_ui__Spacer__x-large web_ui__Spacer__horizontal"></div>
+    <div class="web_ui__Card__card web_ui__Card__overflowAuto">
+        <div class="web_ui__Cell__cell web_ui__Cell__tight" role="presentation">
+            <div class="web_ui__Cell__content">
+                <div class="web_ui__Cell__body"><label for="price" class="web_ui__Input__input web_ui__Input__wide"
+                        data-testid="price-input">
+                        <div class="web_ui__Input__title" data-testid="price-input--title">Precio</div>
+                        <div class="web_ui__Input__content"><input class="web_ui__Input__value" id="price"
+                                placeholder="0,00&nbsp;€" data-testid="price-input--input" type="text"
+                                value="15,00&nbsp;€" name="price"></div>
+                        <div class="web_ui__Input__note">
+                            <div class="web_ui__Spacer__regular web_ui__Spacer__horizontal"></div>
+                            <div class="u-flexbox u-flex-direction-column u-gap-medium">
+                                <div>
+                                    <p class="web_ui__Text__text web_ui__Text__caption web_ui__Text__left web_ui__Text__html-content"
+                                        data-testid="bundle-discounts-hint"><span>Descuentos en los lotes de hasta el
+                                            20&nbsp;% activados. </span><button type="button"><span
+                                                class="web_ui__Text__text web_ui__Text__caption web_ui__Text__left web_ui__Text__clickable web_ui__Text__underline">Editar
+                                                los ajustes de los descuentos</span></button></p>
+                                </div>
+                                <div data-testid="pricing-strategies-wrapper"
+                                    class="u-flexbox u-flex-direction-column u-gap-medium">
+                                    <div class="u-flexbox u-align-items-center u-justify-content-between u-gap-small">
+                                        <h4 id="pricing-strategies-title"
+                                            class="web_ui__Text__text web_ui__Text__subtitle web_ui__Text__left web_ui__Text__amplified">
+                                            Recomendación de precio</h4><button type="button"
+                                            aria-label="Obtén más información sobre las recomendaciones de precio y cómo se calculan."><span
+                                                class="web_ui__Text__text web_ui__Text__subtitle web_ui__Text__left web_ui__Text__clickable">Más
+                                                información</span></button>
+                                    </div>
+                                    <div role="group" aria-labelledby="pricing-strategies-title"
+                                        data-testid="pricing-strategy-group">
+                                        <div
+                                            class="web_ui__SelectionGroup__selection_group web_ui__SelectionGroup__tight web_ui__SelectionGroup__horizontal web_ui__SelectionGroup__scroll">
+                                            <div class="web_ui__SelectionItem__selection_item web_ui__SelectionItem__default web_ui__SelectionItem__auto-fit horizontal"
+                                                role="checkbox" aria-checked="false"
+                                                aria-label="2,00&nbsp;€, Ganga: el precio está por debajo de la media."
+                                                tabindex="0" data-testid="pricing-strategy-item-min">
+                                                <div class="web_ui__SelectionItem__content"
+                                                    data-testid="pricing-strategy-item-min--content">
+                                                    <div class="web_ui__SelectionItem__title">
+                                                        <div class="pricing-strategies__card-title">
+                                                            <p
+                                                                class="web_ui__Text__text web_ui__Text__title web_ui__Text__left">
+                                                                2,00 €</p>
+                                                        </div>
+                                                    </div>
+                                                    <p class="web_ui__SelectionItem__body">Ganga</p>
+                                                </div>
+                                            </div>
+                                            <div class="web_ui__SelectionItem__selection_item web_ui__SelectionItem__default web_ui__SelectionItem__auto-fit horizontal"
+                                                role="checkbox" aria-checked="false"
+                                                aria-label="4,00&nbsp;€, Óptimo: el precio se encuentra dentro del rango de artículos similares que se han vendido."
+                                                tabindex="0" data-testid="pricing-strategy-item-mid">
+                                                <div class="web_ui__SelectionItem__content"
+                                                    data-testid="pricing-strategy-item-mid--content">
+                                                    <div class="web_ui__SelectionItem__title">
+                                                        <div class="pricing-strategies__card-title">
+                                                            <p
+                                                                class="web_ui__Text__text web_ui__Text__title web_ui__Text__left">
+                                                                4,00 €</p>
+                                                        </div>
+                                                    </div>
+                                                    <p class="web_ui__SelectionItem__body">Óptimo</p>
+                                                </div>
+                                            </div>
+                                            <div class="web_ui__SelectionItem__selection_item web_ui__SelectionItem__default web_ui__SelectionItem__auto-fit horizontal"
+                                                role="checkbox" aria-checked="false"
+                                                aria-label="7,00&nbsp;€, Prémium: el precio es superior a la media."
+                                                tabindex="0" data-testid="pricing-strategy-item-max">
+                                                <div class="web_ui__SelectionItem__content"
+                                                    data-testid="pricing-strategy-item-max--content">
+                                                    <div class="web_ui__SelectionItem__title">
+                                                        <div class="pricing-strategies__card-title">
+                                                            <p
+                                                                class="web_ui__Text__text web_ui__Text__title web_ui__Text__left">
+                                                                7,00 €</p>
+                                                        </div>
+                                                    </div>
+                                                    <p class="web_ui__SelectionItem__body">Prémium</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="price-suggestion-card__similar-items-block"><span><button
+                                                type="button"><span
+                                                    class="web_ui__Text__text web_ui__Text__caption web_ui__Text__left web_ui__Text__clickable"
+                                                    data-testid="similar-items-cta">Ver precio de artículos
+                                                    similares.</span></button></span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </label></div>
+            </div>
+        </div>
+        <div class="web_ui__Divider__divider"></div>
+        <div id="package_size">
+            <div class="web_ui__Label__label web_ui__Label__wide web_ui__Label__leading">
+                <div class="web_ui__Label__content">
+                    <p class="web_ui__Text__text web_ui__Text__subtitle web_ui__Text__left">Selecciona el tamaño del
+                        paquete</p>
+                </div>
+            </div>
+            <div class="item-upload-package-size">
+                <div id="package-size-1" class="web_ui__Cell__cell web_ui__Cell__wide" role="presentation"
+                    data-testid="1-package-size--cell">
+                    <div class="web_ui__Cell__content">
+                        <div class="web_ui__Cell__heading">
+                            <div class="web_ui__Cell__title" data-testid="1-package-size--cell--title">
+                                <div class="web_ui__Badge__badge web_ui__Badge__success web_ui__Badge__filled"
+                                    data-testid="package-size-suggestion-badge-id-1">
+                                    <div class="web_ui__Badge__content"
+                                        data-testid="package-size-suggestion-badge-id-1--content">Recomendado</div>
+                                </div>
+                                <div class="web_ui__Spacer__regular web_ui__Spacer__horizontal"></div><span
+                                    class="web_ui__Text__text web_ui__Text__title web_ui__Text__left">Pequeño</span>
+                            </div>
+                        </div>
+                        <div class="web_ui__Cell__body" data-testid="1-package-size--cell--content">Para artículos que
+                            quepan en un sobre grande.<div class="">
+                                <div class="web_ui__Spacer__regular web_ui__Spacer__horizontal"></div><span><button
+                                        type="button"><span
+                                            class="web_ui__Text__text web_ui__Text__subtitle web_ui__Text__left web_ui__Text__primary web_ui__Text__clickable">Ver
+                                            información sobre tamaños y coberturas</span></button></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="web_ui__Cell__suffix" data-testid="1-package-size--cell--suffix"><label
+                            for="package_type_selector_1" class="web_ui__Radio__radio"
+                            data-testid="package_type_selector_1"><input id="package_type_selector_1"
+                                data-testid="package_type_selector_1--input" aria-labelledby="package-size-1"
+                                type="radio" name="package_type_selector_1"><span
+                                class="web_ui__Radio__button"></span><span id="package_type_selector_1_label"
+                                class="web_ui__Radio__label" data-testid="package_type_selector_1--text"></span></label>
+                    </div>
+                </div>
+            </div>
+            <div class="item-upload-package-size">
+                <div id="package-size-2" class="web_ui__Cell__cell web_ui__Cell__wide web_ui__Cell__navigating"
+                    role="button" tabindex="0" data-testid="2-package-size--cell">
+                    <div class="web_ui__Cell__content">
+                        <div class="web_ui__Cell__heading">
+                            <div class="web_ui__Cell__title" data-testid="2-package-size--cell--title">
+                                <div class="web_ui__Spacer__regular web_ui__Spacer__horizontal"></div><span
+                                    class="web_ui__Text__text web_ui__Text__title web_ui__Text__left">Mediano</span>
+                            </div>
+                        </div>
+                        <div class="web_ui__Cell__body" data-testid="2-package-size--cell--content">Para artículos que
+                            quepan en una caja de zapatos.<div class="u-hidden">
+                                <div class="web_ui__Spacer__regular web_ui__Spacer__horizontal"></div><span><button
+                                        type="button"><span
+                                            class="web_ui__Text__text web_ui__Text__subtitle web_ui__Text__left web_ui__Text__primary web_ui__Text__clickable">Ver
+                                            información sobre tamaños y coberturas</span></button></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="web_ui__Cell__suffix" data-testid="2-package-size--cell--suffix"><label
+                            for="package_type_selector_2" class="web_ui__Radio__radio"
+                            data-testid="package_type_selector_2"><input id="package_type_selector_2"
+                                data-testid="package_type_selector_2--input" aria-labelledby="package-size-2"
+                                type="radio" name="package_type_selector_2"><span
+                                class="web_ui__Radio__button"></span><span id="package_type_selector_2_label"
+                                class="web_ui__Radio__label" data-testid="package_type_selector_2--text"></span></label>
+                    </div>
+                </div>
+            </div>
+            <div class="item-upload-package-size">
+                <div id="package-size-3" class="web_ui__Cell__cell web_ui__Cell__wide web_ui__Cell__navigating"
+                    role="button" tabindex="0" data-testid="3-package-size--cell">
+                    <div class="web_ui__Cell__content">
+                        <div class="web_ui__Cell__heading">
+                            <div class="web_ui__Cell__title" data-testid="3-package-size--cell--title">
+                                <div class="web_ui__Spacer__regular web_ui__Spacer__horizontal"></div><span
+                                    class="web_ui__Text__text web_ui__Text__title web_ui__Text__left">Grande</span>
+                            </div>
+                        </div>
+                        <div class="web_ui__Cell__body" data-testid="3-package-size--cell--content">Para artículos que
+                            quepan en una caja de mudanza.<div class="u-hidden">
+                                <div class="web_ui__Spacer__regular web_ui__Spacer__horizontal"></div><span><button
+                                        type="button"><span
+                                            class="web_ui__Text__text web_ui__Text__subtitle web_ui__Text__left web_ui__Text__primary web_ui__Text__clickable">Ver
+                                            información sobre tamaños y coberturas</span></button></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="web_ui__Cell__suffix" data-testid="3-package-size--cell--suffix"><label
+                            for="package_type_selector_3" class="web_ui__Radio__radio"
+                            data-testid="package_type_selector_3"><input id="package_type_selector_3"
+                                data-testid="package_type_selector_3--input" aria-labelledby="package-size-3"
+                                type="radio" name="package_type_selector_3"><span
+                                class="web_ui__Radio__button"></span><span id="package_type_selector_3_label"
+                                class="web_ui__Radio__label" data-testid="package_type_selector_3--text"></span></label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="web_ui__Note__note web_ui__Note__default web_ui__Note__left">El comprador pagará los gastos de envío
+    </div>
+    <div class="web_ui__Spacer__x-large web_ui__Spacer__horizontal"></div>
+    <div class="web_ui__Card__card web_ui__Card__overflowAuto">
+        <div class="web_ui__Container__container--p-x-large">
+            <div class="web_ui__Cell__cell web_ui__Cell__tight" role="presentation">
+                <div class="web_ui__Cell__content">
+                    <div class="web_ui__Cell__heading">
+                        <div class="web_ui__Cell__title"><span id="bump-title"
+                                class="web_ui__Text__text web_ui__Text__title web_ui__Text__left web_ui__Text__parent">Vende
+                                rápido con un destacado</span></div>
+                    </div>
+                    <div class="web_ui__Cell__body">
+                        <div aria-label="desde 1,15&nbsp;€">
+                            <div class="web_ui__Spacer__small web_ui__Spacer__horizontal"></div>
+                            <p aria-hidden="true"
+                                class="web_ui__Text__text web_ui__Text__subtitle web_ui__Text__left web_ui__Text__amplified">
+                                desde 1,15&nbsp;€</p>
+                            <div class="web_ui__Spacer__small web_ui__Spacer__horizontal"></div>
+                        </div>
+                        <p class="web_ui__Text__text web_ui__Text__subtitle web_ui__Text__left web_ui__Text__parent">
+                            Ayuda a vender tu artículo más rápidamente llegando a más compradores.</p><button
+                            type="button"><span
+                                class="web_ui__Text__text web_ui__Text__subtitle web_ui__Text__left web_ui__Text__clickable web_ui__Text__underline">Leer
+                                más</span></button>
+                    </div>
+                </div>
+                <div class="web_ui__Cell__suffix">
+                    <div class="web_ui__Container__container"><label for="bump" data-testid="bump-checkbox"
+                            class="web_ui__Checkbox__checkbox"><input id="bump" data-testid="bump-checkbox--input"
+                                aria-labelledby="bump-title" type="checkbox" value="1" name="bump"><span
+                                class="web_ui__Checkbox__button web_ui__Checkbox__button-left text-top"></span></label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="u-ui-padding-top-x-large">
+        <div class="web_ui__Card__card web_ui__Card__overflowAuto">
+            <div class="web_ui__Cell__cell web_ui__Cell__default" role="presentation">
+                <div class="web_ui__Cell__content">
+                    <div class="web_ui__Cell__body">¿Qué te parece nuestro proceso para subir artículos?</div>
+                </div>
+                <div class="web_ui__Cell__suffix"><button type="button"
+                        class="web_ui__Button__button web_ui__Button__outlined web_ui__Button__default web_ui__Button__primary web_ui__Button__truncated"
+                        data-testid="item-upload--action-open-feedback"><span class="web_ui__Button__content"><span
+                                class="web_ui__Button__label">Dar opinión</span></span></button></div>
+            </div>
+        </div>
+    </div>
+    <div class="web_ui__Spacer__x-large web_ui__Spacer__horizontal"></div>
+    <div class="form-actions u-clearfix u-ui-margin-bottom-x2-large">
+        <div class="u-float-right"><button type="button"
+                class="web_ui__Button__button web_ui__Button__outlined web_ui__Button__default web_ui__Button__primary web_ui__Button__inline web_ui__Button__truncated"
+                data-testid="upload-form-save-draft-button"><span class="web_ui__Button__content"><span
+                        class="web_ui__Button__label">Guardar borrador</span></span></button>
+            <div class="web_ui__Spacer__large web_ui__Spacer__vertical"></div><button type="button"
+                class="web_ui__Button__button web_ui__Button__filled web_ui__Button__default web_ui__Button__primary web_ui__Button__inline web_ui__Button__truncated"
+                data-testid="upload-form-save-button"><span class="web_ui__Button__content"><span
+                        class="web_ui__Button__label">Subir</span></span></button>
+        </div>
+    </div>
+</div>
